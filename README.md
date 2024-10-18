@@ -54,3 +54,56 @@ The platform is built with a scalable architecture and focuses on performance, r
    ```bash
    git clone https://github.com/yourusername/trading-platform.git
    cd trading-platform
+   ```
+2. Install dependencies for both frontend and backend:
+  ```bash
+  # Install backend dependencies
+  cd backend
+  npm install
+  ```
+  ```bash
+  # Install frontend dependencies
+  cd ../frontend
+  npm install
+  ```
+3. Set up PostgreSQL database:
+Create a database and configure the connection in the backend .env file.
+
+4. Run the application:
+  ```bash
+  # Start the backend
+  cd backend
+  npm start
+  ```
+
+# Start the frontend
+cd ../frontend
+npm start
+Access the app at http://localhost:3000.
+API Documentation
+
+User Authentication
+POST /api/auth/register: Register a new user.
+POST /api/auth/login: Login an existing user.
+Market Data
+GET /api/market/ticker/
+: Fetch real-time stock data for a specific symbol.
+GET /api/market/history/
+: Get historical data for stock charts.
+Trading
+POST /api/trade/buy: Execute a buy trade for a specific stock.
+POST /api/trade/sell: Execute a sell trade for a specific stock.
+Deployment
+
+The application can be deployed using Docker and Kubernetes for scalability. Here’s a basic setup for running the project in Docker:
+
+bash
+Copy code
+# Build the Docker image
+docker build -t trading-platform .
+
+# Run the Docker container
+docker run -p 3000:3000 trading-platform
+For production deployment, consider using Kubernetes for managing container orchestration, and cloud services like AWS, Google Cloud, or Azure for infrastructure.
+
+
