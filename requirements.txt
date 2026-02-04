@@ -1,0 +1,8 @@
+pandas
+watchdog
+streamlit
+plotly
+pyyaml
+openpyxl
+xlrd
+mcp

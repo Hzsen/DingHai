@@ -1,0 +1,24 @@
+data_dir: data
+processed_dir: processed
+input_extensions:
+  - .csv
+  - .txt
+  - .xls
+  - .xlsx
+min_inputs: 2
+header_scan_rows: 5
+encoding_candidates:
+  - utf-8-sig
+  - utf-8
+  - gb18030
+  - gbk
+excel_engines:
+  - openpyxl
+  - xlrd
+range_columns:
+  start: AAA
+  end: 反核标
+output_name_template: stock_rank_change_{day1}_{day2}.xlsx
+ui:
+  default_top_n: 200
+  delta_threshold: 0

@@ -3,12 +3,25 @@ import re
 import pandas as pd
 
 
+def read_csv_with_encodings(path, encodings=None, **kwargs):
+    encodings = encodings or ["utf-8-sig", "utf-8", "gb18030", "gbk"]
+    last_error = None
+    for encoding in encodings:
+        try:
+            return pd.read_csv(
+                path, encoding=encoding, sep=None, engine="python", **kwargs
+            )
+        except Exception as exc:  # noqa: BLE001 - best-effort encoding fallback
+            last_error = exc
+    raise last_error
+
+
 def find_header_row(path, max_scan_rows=5):
     """
     Try to locate the header row that contains '代码' and '名称' or '涨幅%'.
     Returns number of rows to skip (skiprows).
     """
-    sample = pd.read_csv(path, header=None, nrows=max_scan_rows, encoding="utf-8-sig")
+    sample = read_csv_with_encodings(path, header=None, nrows=max_scan_rows)
     for i in range(len(sample)):
         row = sample.iloc[i].astype(str).str.replace(r"\s+", "", regex=True)
         if row.str.contains("代码").any() and (row.str.contains("名称").any() or row.str.contains("涨幅%").any()):
@@ -16,8 +29,21 @@ def find_header_row(path, max_scan_rows=5):
     return 0
 
 
-def find_header_row_excel(path, max_scan_rows=5):
-    sample = pd.read_excel(path, header=None, nrows=max_scan_rows)
+def read_excel_with_engines(path, engines, **kwargs):
+    last_error = None
+    for engine in engines:
+        try:
+            return pd.read_excel(path, engine=engine, **kwargs)
+        except Exception as exc:  # noqa: BLE001 - best-effort engine fallback
+            last_error = exc
+    raise last_error
+
+
+def find_header_row_excel(path, max_scan_rows=5, engines=None):
+    engines = engines or ["openpyxl", "xlrd"]
+    sample = read_excel_with_engines(
+        path, engines, header=None, nrows=max_scan_rows
+    )
     for i in range(len(sample)):
         row = sample.iloc[i].astype(str).str.replace(r"\s+", "", regex=True)
         if row.str.contains("代码").any() and (row.str.contains("名称").any() or row.str.contains("涨幅%").any()):
@@ -29,10 +55,16 @@ def read_data(path):
     ext = os.path.splitext(path)[1].lower()
     if ext in [".csv", ".txt"]:
         skip = find_header_row(path)
-        df = pd.read_csv(path, skiprows=skip, encoding="utf-8-sig")
+        df = read_csv_with_encodings(path, skiprows=skip)
     else:
-        skip = find_header_row_excel(path)
-        df = pd.read_excel(path, skiprows=skip)
+        engines = ["openpyxl", "xlrd"]
+        try:
+            skip = find_header_row_excel(path, engines=engines)
+            df = read_excel_with_engines(path, engines, skiprows=skip)
+        except Exception:
+            # Some .xls files are actually text exports (TSV/CSV) with mislabeled extension
+            skip = find_header_row(path)
+            df = read_csv_with_encodings(path, skiprows=skip)
     return df
 
 
@@ -80,9 +112,9 @@ def compute_rank(df, rank_col):
 
 
 def extract_date_label(path, fallback):
-    match = re.search(r"(20\\d{6})", path)
+    match = re.search(r"(20\d{6})", path)
     if match:
-        return match.group(1)[-4:]
+        return match.group(1)
     return fallback
 
 
@@ -99,8 +131,8 @@ def get_range_columns(df, start_col="AAA", end_col="反核标"):
 
 def main():
     # 修改为你的实际路径与文件名
-    day1_path = "data/沪深京非ST20260119.xlsx"
-    day2_path = "data/沪深京非ST20260120.xlsx"
+    day1_path = "data/沪深京非ST20260203.xls"
+    day2_path = "data/沪深京非ST20260204.xls"
 
     day1 = normalize_columns(read_data(day1_path))
     day2 = normalize_columns(read_data(day2_path))
@@ -111,12 +143,12 @@ def main():
     day1 = compute_rank(day1, "Rank_Day1")
     day2 = compute_rank(day2, "Rank_Day2")
 
-    range_cols_day1 = get_range_columns(day1)
-    range_cols = [c for c in range_cols_day1 if c in day2.columns]
+    range_cols_day2 = get_range_columns(day2)
+    range_cols = [c for c in range_cols_day2 if c in day2.columns]
 
     # 取交集
     merged = pd.merge(
-        day1[["代码", "名称", "涨幅%", "Rank_Day1"] + range_cols],
+        day1[["代码", "名称", "涨幅%", "Rank_Day1"]],
         day2[["代码", "名称", "涨幅%", "Rank_Day2"] + range_cols],
         on="代码",
         how="inner",
@@ -140,12 +172,11 @@ def main():
     )
 
     for col in range_cols:
-        day1_col = f"{col}_Day1"
         day2_col = f"{col}_Day2"
-        if day1_col in merged.columns:
-            merged = merged.rename(columns={day1_col: f"{day1_label}_{col}"})
         if day2_col in merged.columns:
             merged = merged.rename(columns={day2_col: f"{day2_label}_{col}"})
+        elif col in merged.columns:
+            merged = merged.rename(columns={col: f"{day2_label}_{col}"})
 
     merged["Delta"] = merged[f"{day1_label}排名"] - merged[f"{day2_label}排名"]
 
@@ -159,12 +190,14 @@ def main():
             f"{day2_label}排名",
             "Delta",
         ]
-        + [f"{day1_label}_{col}" for col in range_cols]
         + [f"{day2_label}_{col}" for col in range_cols]
     ].sort_values("Delta", ascending=False)
 
-    result.to_excel("stock_rank_change19_20.xlsx", index=False)
-    print("已保存: stock_rank_change19_20.xlsx")
+    output_name = os.path.join(
+        "data", f"stock_rank_change_{day1_label}_{day2_label}.xlsx"
+    )
+    result.to_excel(output_name, index=False)
+    print(f"已保存: {output_name}")
 
 
 if __name__ == "__main__":
