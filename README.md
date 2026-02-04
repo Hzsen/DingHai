@@ -1,5 +1,41 @@
 # DingHai
 
+## Local ETL + Dashboard (Python)
+
+This repository includes a lightweight ETL + Streamlit dashboard for local stock screening.
+Drop raw CSV/XLS/XLSX files into `data/`, the watcher produces processed outputs in
+`processed/`, and the UI loads those results for filtering and charts.
+
+### Quickstart
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Run the watcher (auto ETL)
+
+```bash
+python -m src.services.watcher
+```
+
+### Run the Streamlit UI
+
+```bash
+streamlit run src/ui/app.py
+```
+
+### Run the MCP server
+
+```bash
+python -m src.mcp.server
+```
+
+### Config
+
+See `config.yaml` for input/output directories, encoding fallbacks, and column ranges.
+
 **Simulated Investment and Stock Trading Platform**
 
 ## Overview
