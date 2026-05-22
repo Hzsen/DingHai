@@ -1,0 +1,528 @@
+// ============================================================
+// Chanlun_DH.pine  —  缠论自动画图  v0.4
+// Pine Script v6
+//
+// 需求规格：Chanlun_requirement.md
+//
+// 版本路线：
+//   v0.1  标准化K线 + debug
+//   v0.2  顶底分型
+//   v0.3  确认笔
+//   v0.4  pending 未完成笔      ← 当前版本
+//   v0.5  中枢 box              (待实现)
+//   v0.6  递归高级别笔          (待实现)
+//   v0.7  买卖点 / 报警         (待实现)
+//
+// 架构原则：
+//   - 所有修改全局标量变量的逻辑在 global scope 直接执行
+//   - 函数只做纯计算 / 条件判断 / 数组操作（不修改全局标量）
+//   - 无负索引，每次访问数组前检查 size
+//   - new_std_sealed 门控：只有真正封口新标准化K线才触发分型检测
+//   - pending_line 单例复用，不每 bar 重建
+//   - 分型采用宽松定义（§12.1）：顶只比 high，底只比 low
+//   - 分型去重：用 last_checked_mid_seq 防止同一 mid 被重复检测
+// ============================================================
+
+//@version=6
+indicator("缠论 DH v0.4", overlay=true,
+     max_lines_count  = 500,
+     max_labels_count = 500,
+     max_boxes_count  = 100)
+
+// ============================================================
+// ██  SECTION 0：用户输入
+// ============================================================
+
+grp_std   = "标准化K线"
+grp_frac  = "分型"
+grp_bi    = "笔"
+grp_debug = "Debug"
+
+show_std_debug   = input.bool(false, "显示标准化K线序号标记", group=grp_std)
+show_frac_mark   = input.bool(true,  "显示顶底分型 ▼▲ 标记", group=grp_frac)
+show_bi_conf     = input.bool(true,  "显示已确认笔（实线）",  group=grp_bi)
+show_bi_pend     = input.bool(true,  "显示 Pending 笔（虚线）", group=grp_bi)
+show_bi_endpt    = input.bool(true,  "显示笔端点 T/B 标记",   group=grp_bi)
+show_debug_panel = input.bool(true,  "显示 Debug Panel",      group=grp_debug)
+
+bi_color   = input.color(color.new(color.blue,   0), "已确认笔颜色", group=grp_bi)
+bi_width   = input.int  (2, "已确认笔宽度", minval=1, maxval=5,      group=grp_bi)
+pend_color = input.color(color.new(color.orange, 0), "Pending 笔颜色", group=grp_bi)
+pend_width = input.int  (1, "Pending 笔宽度", minval=1, maxval=5,    group=grp_bi)
+
+// 需求 §12.2：成笔最小合成K线间隔，默认 4
+bi_min_span = input.int(4, "成笔最小合成K线间隔", minval=2, maxval=20, group=grp_bi)
+
+// ============================================================
+// ██  SECTION 1：标准化K线状态机
+//
+// 数组：每个元素对应一根已封口合成K线
+//   std_H_arr       高点价格
+//   std_L_arr       低点价格
+//   std_H_bar_arr   高点所在原始 bar_index  ← 顶分型端点用
+//   std_L_bar_arr   低点所在原始 bar_index  ← 底分型端点用
+//   std_end_bar_arr 合并K线最后一根原始 bar（绘图 x 轴参考）
+//   std_seq_arr     封口序号（0,1,2,...，不跳跃）
+//
+// 需求 §3.4：highBarIndex 与 lowBarIndex 必须分开存储，
+//   合成K线的高低点可能来自不同原始 bar。
+//
+// new_std_sealed：每 bar 开始时置 false，
+//   只有在本 bar 真正封口了一根合成K线时置 true，
+//   用于门控分型检测，防止重复 push。
+// ============================================================
+
+var array<float> std_H_arr       = array.new<float>()
+var array<float> std_L_arr       = array.new<float>()
+var array<int>   std_H_bar_arr   = array.new<int>()
+var array<int>   std_L_bar_arr   = array.new<int>()
+var array<int>   std_end_bar_arr = array.new<int>()
+var array<int>   std_seq_arr     = array.new<int>()
+
+var float curr_std_H       = na
+var float curr_std_L       = na
+var int   curr_std_H_bar   = na
+var int   curr_std_L_bar   = na
+var int   curr_std_end_bar = na
+var int   curr_std_seq     = -1
+
+// 封口门控：每 bar 重置，封口时才置 true
+var bool new_std_sealed = false
+new_std_sealed := false
+
+// ── 纯计算：判断包含关系（需求 §3.1）────────────────────
+f_has_contain(float aH, float aL, float bH, float bL) =>
+    (aH >= bH and aL <= bL) or (bH >= aH and bL <= aL)
+
+// ── 纯计算：已封口合成K线方向（需求 §3.2）───────────────
+// 返回：1=上行，-1=下行，0=未知
+f_std_dir() =>
+    int sz = array.size(std_H_arr)
+    if sz < 2
+        0
+    else
+        array.get(std_H_arr, sz - 1) >= array.get(std_H_arr, sz - 2) ? 1 : -1
+
+// ── 标准化K线主逻辑（global scope，修改全局标量）──────────
+// 需求 §3.3：上行取高，下行取低
+
+if na(curr_std_H)
+    curr_std_H       := high
+    curr_std_L       := low
+    curr_std_H_bar   := bar_index
+    curr_std_L_bar   := bar_index
+    curr_std_end_bar := bar_index
+else
+    bool _hc = f_has_contain(curr_std_H, curr_std_L, high, low)
+    if _hc
+        int _dir = f_std_dir()
+        if _dir >= 0
+            if high > curr_std_H
+                curr_std_H     := high
+                curr_std_H_bar := bar_index
+            if low > curr_std_L
+                curr_std_L     := low
+                curr_std_L_bar := bar_index
+        else
+            if high < curr_std_H
+                curr_std_H     := high
+                curr_std_H_bar := bar_index
+            if low < curr_std_L
+                curr_std_L     := low
+                curr_std_L_bar := bar_index
+        curr_std_end_bar := bar_index
+    else
+        curr_std_seq += 1
+        array.push(std_H_arr,       curr_std_H)
+        array.push(std_L_arr,       curr_std_L)
+        array.push(std_H_bar_arr,   curr_std_H_bar)
+        array.push(std_L_bar_arr,   curr_std_L_bar)
+        array.push(std_end_bar_arr, curr_std_end_bar)
+        array.push(std_seq_arr,     curr_std_seq)
+        new_std_sealed := true
+
+        curr_std_H       := high
+        curr_std_L       := low
+        curr_std_H_bar   := bar_index
+        curr_std_L_bar   := bar_index
+        curr_std_end_bar := bar_index
+
+// ============================================================
+// ██  SECTION 2：顶底分型检测
+//
+// 需求 §12.1（宽松定义，已确认采用）：
+//   顶分型：mid.H > left.H AND mid.H > right.H
+//   底分型：mid.L < left.L AND mid.L < right.L
+//   不要求 mid.L 同时高于两侧 / mid.H 同时低于两侧。
+//
+// 需求 §4.3：分型至少需要右侧一根合成K线确认，
+//   故检测窗口：left=sz-3, mid=sz-2, right=sz-1
+//   right 刚封口即可作为右K（它的存在本身就是确认）。
+//
+// 去重机制：last_checked_mid_seq 记录上次已检测的 mid seq，
+//   防止同一个 mid 在连续封口时被重复 push。
+//
+// 存储：
+//   frac_type_arr   1=顶  -1=底
+//   frac_price_arr  顶用 mid.H，底用 mid.L  （需求 §4.4）
+//   frac_bar_arr    顶用 mid.H_bar，底用 mid.L_bar
+//   frac_seq_arr    mid 的 std_seq
+// ============================================================
+
+var array<int>   frac_type_arr  = array.new<int>()
+var array<float> frac_price_arr = array.new<float>()
+var array<int>   frac_bar_arr   = array.new<int>()
+var array<int>   frac_seq_arr   = array.new<int>()
+
+// 去重：记录上次已经作为 mid 检测过的 std_seq
+var int last_checked_mid_seq = -1
+
+if new_std_sealed
+    int _sz = array.size(std_H_arr)
+    if _sz >= 3
+        // mid = sz-2，left = sz-3，right = sz-1
+        int _mSq = array.get(std_seq_arr, _sz - 2)
+
+        // 只有 mid 是新的才检测，防止重复 push 同一个分型
+        if _mSq != last_checked_mid_seq
+            last_checked_mid_seq := _mSq
+
+            float _lH  = array.get(std_H_arr,     _sz - 3)
+            float _lL  = array.get(std_L_arr,     _sz - 3)
+            float _mH  = array.get(std_H_arr,     _sz - 2)
+            float _mL  = array.get(std_L_arr,     _sz - 2)
+            int   _mHb = array.get(std_H_bar_arr, _sz - 2)
+            int   _mLb = array.get(std_L_bar_arr, _sz - 2)
+            float _rH  = array.get(std_H_arr,     _sz - 1)
+            float _rL  = array.get(std_L_arr,     _sz - 1)
+
+            // 宽松定义（需求 §12.1）
+            bool _is_top = _mH > _lH and _mH > _rH
+            bool _is_bot = _mL < _lL and _mL < _rL
+
+            if _is_top
+                array.push(frac_type_arr,  1)
+                array.push(frac_price_arr, _mH)
+                array.push(frac_bar_arr,   _mHb)
+                array.push(frac_seq_arr,   _mSq)
+            else if _is_bot
+                array.push(frac_type_arr,  -1)
+                array.push(frac_price_arr, _mL)
+                array.push(frac_bar_arr,   _mLb)
+                array.push(frac_seq_arr,   _mSq)
+
+// ============================================================
+// ██  SECTION 3：笔合成状态机
+//
+// 需求 §5.1–§5.3 + §12.2–§12.3：
+//   - 笔由交替顶底分型构成
+//   - 同类型分型只保留更极端一个（需求 §13.2）
+//   - 异向分型需满足 bi_min_span 根合成K线间隔
+//   - 距离不足时检查是否需要回退（while + guard）
+//
+// 不变式：
+//   confirmed_lines.size() == bi_pts_type_arr.size() - 1
+//
+// 需求 §12.3：
+//   confirmed bi 用实线；tentative（pending）用虚线。
+//   pending line 不进入 confirmed_lines 数组。
+// ============================================================
+
+var array<int>   bi_pts_type_arr  = array.new<int>()
+var array<float> bi_pts_price_arr = array.new<float>()
+var array<int>   bi_pts_bar_arr   = array.new<int>()
+var array<int>   bi_pts_seq_arr   = array.new<int>()
+
+var array<line>  confirmed_lines  = array.new<line>()
+
+var line pending_line = na
+
+// ── 纯辅助：安全读末尾 ────────────────────────────────────
+f_tail_int(array<int> arr) =>
+    int _s = array.size(arr)
+    _s > 0 ? array.get(arr, _s - 1) : na
+
+f_tail_float(array<float> arr) =>
+    int _s = array.size(arr)
+    _s > 0 ? array.get(arr, _s - 1) : na
+
+f_second_last_int(array<int> arr) =>
+    int _s = array.size(arr)
+    _s >= 2 ? array.get(arr, _s - 2) : na
+
+f_second_last_float(array<float> arr) =>
+    int _s = array.size(arr)
+    _s >= 2 ? array.get(arr, _s - 2) : na
+
+// ── 删末尾笔端点 + 同步删末尾 confirmed line ─────────────
+// 不变式：lines.size() == pts.size() - 1
+// 删一个端点后，新 pts = _pts-1，需要 lines = _pts-2
+// 若当前 lines > _pts-2 则删末尾一条
+f_bi_pop_tail() =>
+    int _pts = array.size(bi_pts_type_arr)
+    if _pts > 0
+        array.pop(bi_pts_type_arr)
+        array.pop(bi_pts_price_arr)
+        array.pop(bi_pts_bar_arr)
+        array.pop(bi_pts_seq_arr)
+        int _lines = array.size(confirmed_lines)
+        if _lines > _pts - 2
+            line _ln = array.pop(confirmed_lines)
+            if not na(_ln)
+                line.delete(_ln)
+
+// ── 创建 confirmed line 并推入数组 ───────────────────────
+f_bi_push_line(int x1, float y1, int x2, float y2) =>
+    line _ln = line.new(x1, y1, x2, y2,
+         xloc   = xloc.bar_index,
+         extend = extend.none,
+         color  = bi_color,
+         style  = line.style_solid,
+         width  = bi_width)
+    array.push(confirmed_lines, _ln)
+
+// ── 笔合成主逻辑（global scope，last_frac_sz 门控）────────
+var int last_frac_sz = 0
+
+int _cur_frac_sz = array.size(frac_type_arr)
+
+if _cur_frac_sz > last_frac_sz
+    last_frac_sz := _cur_frac_sz
+
+    int   _nType  = array.get(frac_type_arr,  _cur_frac_sz - 1)
+    float _nPrice = array.get(frac_price_arr, _cur_frac_sz - 1)
+    int   _nBar   = array.get(frac_bar_arr,   _cur_frac_sz - 1)
+    int   _nSeq   = array.get(frac_seq_arr,   _cur_frac_sz - 1)
+
+    int _pts_sz = array.size(bi_pts_type_arr)
+
+    if _pts_sz == 0
+        array.push(bi_pts_type_arr,  _nType)
+        array.push(bi_pts_price_arr, _nPrice)
+        array.push(bi_pts_bar_arr,   _nBar)
+        array.push(bi_pts_seq_arr,   _nSeq)
+
+    else
+        int   _lastType  = f_tail_int  (bi_pts_type_arr)
+        float _lastPrice = f_tail_float(bi_pts_price_arr)
+        int   _lastSeq   = f_tail_int  (bi_pts_seq_arr)
+        int   _lastBar   = f_tail_int  (bi_pts_bar_arr)
+
+        if _nType == _lastType
+            // ── 同向：取更极端（需求 §13.2）────────────────
+            bool _rep_top = _nType == 1  and _nPrice > _lastPrice
+            bool _rep_bot = _nType == -1 and _nPrice < _lastPrice
+            bool _replace = _rep_top or _rep_bot
+            if _replace
+                int _sz = array.size(bi_pts_type_arr)
+                array.set(bi_pts_price_arr, _sz - 1, _nPrice)
+                array.set(bi_pts_bar_arr,   _sz - 1, _nBar)
+                array.set(bi_pts_seq_arr,   _sz - 1, _nSeq)
+                // 同步更新末尾 confirmed line 终点（如有）
+                int _lsz = array.size(confirmed_lines)
+                if _lsz > 0
+                    line _ln = array.get(confirmed_lines, _lsz - 1)
+                    if not na(_ln)
+                        line.set_x2(_ln, _nBar)
+                        line.set_y2(_ln, _nPrice)
+
+        else
+            // ── 异向：检查间隔（需求 §12.2）────────────────
+            int  _seq_diff   = _nSeq - _lastSeq
+            bool _far_enough = _seq_diff >= bi_min_span
+
+            if _far_enough
+                // 距离满足 → 确认新笔（需求 §5.4）
+                f_bi_push_line(_lastBar, _lastPrice, _nBar, _nPrice)
+                array.push(bi_pts_type_arr,  _nType)
+                array.push(bi_pts_price_arr, _nPrice)
+                array.push(bi_pts_bar_arr,   _nBar)
+                array.push(bi_pts_seq_arr,   _nSeq)
+
+            else
+                // 距离不足 → 回退修正（while + guard）
+                // 场景：A顶→B底→C顶，C>A 且 B~A 距离不足
+                // 删 B、A，用 C 作为新起点
+                int  _guard   = 0
+                bool _rolling = true
+
+                while _rolling and _guard < 20
+                    _guard += 1
+                    int _cur = array.size(bi_pts_type_arr)
+                    if _cur < 2
+                        _rolling := false
+                    else
+                        int   _penType  = f_second_last_int  (bi_pts_type_arr)
+                        float _penPrice = f_second_last_float(bi_pts_price_arr)
+                        bool _same_dir  = _nType == _penType
+                        bool _beats_top = _nType == 1  and _nPrice > _penPrice
+                        bool _beats_bot = _nType == -1 and _nPrice < _penPrice
+                        bool _need_rb   = _same_dir and (_beats_top or _beats_bot)
+                        if _need_rb
+                            f_bi_pop_tail()
+                            f_bi_pop_tail()
+                        else
+                            _rolling := false
+
+                array.push(bi_pts_type_arr,  _nType)
+                array.push(bi_pts_price_arr, _nPrice)
+                array.push(bi_pts_bar_arr,   _nBar)
+                array.push(bi_pts_seq_arr,   _nSeq)
+
+// ============================================================
+// ██  SECTION 4：Pending（tentative）笔管理
+//
+// 需求 §12.3 §13.5：
+//   最后一笔允许实时变动（tentative bi）。
+//   pending line 从最后确认端点 → 当前 bar 极值。
+//   单例复用：只创建一次，每 bar 更新坐标。
+//   绝不进入 confirmed_lines 数组。
+// ============================================================
+
+int  _bi_sz   = array.size(bi_pts_type_arr)
+bool _has_pts = _bi_sz > 0
+
+if not _has_pts or not show_bi_pend
+    if not na(pending_line)
+        line.delete(pending_line)
+        pending_line := na
+else
+    int   _ltp = f_tail_int  (bi_pts_type_arr)
+    float _lpp = f_tail_float(bi_pts_price_arr)
+    int   _lbp = f_tail_int  (bi_pts_bar_arr)
+
+    // 最后端点是底 → pending 追高；是顶 → pending 追低
+    float _pp = _ltp == -1 ? high : low
+    int   _pb = bar_index
+
+    if na(pending_line)
+        pending_line := line.new(_lbp, _lpp, _pb, _pp,
+             xloc   = xloc.bar_index,
+             extend = extend.none,
+             color  = pend_color,
+             style  = line.style_dashed,
+             width  = pend_width)
+    else
+        line.set_x1(pending_line, _lbp)
+        line.set_y1(pending_line, _lpp)
+        line.set_x2(pending_line, _pb)
+        line.set_y2(pending_line, _pp)
+
+// ============================================================
+// ██  SECTION 5：可视化
+//
+// 所有画标记的逻辑在 global scope 执行
+// 用 last_*_labeled 门控，防止重复创建 label
+// ============================================================
+
+// ── 5A：顶底分型标记（▼▲）────────────────────────────────
+var int last_frac_labeled = -1
+
+int _fz = array.size(frac_type_arr)
+if _fz > 0 and show_frac_mark
+    int   _ft = array.get(frac_type_arr,  _fz - 1)
+    float _fp = array.get(frac_price_arr, _fz - 1)
+    int   _fb = array.get(frac_bar_arr,   _fz - 1)
+    if _fb != last_frac_labeled
+        last_frac_labeled := _fb
+        label.new(_fb, _fp,
+             text      = _ft == 1 ? "▼" : "▲",
+             xloc      = xloc.bar_index,
+             yloc      = yloc.price,
+             color     = color.new(color.white, 100),
+             textcolor = _ft == 1 ? color.red : color.green,
+             style     = _ft == 1 ? label.style_label_down : label.style_label_up,
+             size      = size.small)
+
+// ── 5B：笔端点标记（T/B）─────────────────────────────────
+var int last_bi_pt_labeled = -1
+
+int _bz = array.size(bi_pts_type_arr)
+if _bz > 0 and show_bi_endpt
+    int   _pt = array.get(bi_pts_type_arr,  _bz - 1)
+    float _pp2 = array.get(bi_pts_price_arr, _bz - 1)
+    int   _pb = array.get(bi_pts_bar_arr,   _bz - 1)
+    if _pb != last_bi_pt_labeled
+        last_bi_pt_labeled := _pb
+        label.new(_pb, _pp2,
+             text      = _pt == 1 ? "T" : "B",
+             xloc      = xloc.bar_index,
+             yloc      = yloc.price,
+             color     = color.new(color.blue, 30),
+             textcolor = color.white,
+             style     = _pt == 1 ? label.style_label_down : label.style_label_up,
+             size      = size.tiny)
+
+// ── 5C：标准化K线序号 Debug 标记 ─────────────────────────
+var int last_std_debug_bar = -1
+
+if new_std_sealed and show_std_debug
+    int _ssz = array.size(std_H_arr)
+    if _ssz > 0
+        int   _sEb = array.get(std_end_bar_arr, _ssz - 1)
+        float _sH  = array.get(std_H_arr,       _ssz - 1)
+        int   _sSq = array.get(std_seq_arr,     _ssz - 1)
+        if _sEb != last_std_debug_bar
+            last_std_debug_bar := _sEb
+            label.new(_sEb, _sH,
+                 text      = str.tostring(_sSq),
+                 xloc      = xloc.bar_index,
+                 yloc      = yloc.price,
+                 color     = color.new(color.gray, 80),
+                 textcolor = color.gray,
+                 style     = label.style_label_down,
+                 size      = size.tiny)
+
+// ── 5D：确认笔显示开关（仅 islast 时遍历一次）────────────
+if barstate.islast and not show_bi_conf
+    int _clsz = array.size(confirmed_lines)
+    int _ci   = 0
+    while _ci < _clsz
+        line _cln = array.get(confirmed_lines, _ci)
+        if not na(_cln)
+            line.set_color(_cln, color.new(bi_color, 100))
+        _ci += 1
+
+// ── 5E：Debug Panel ───────────────────────────────────────
+var table dbg_table = na
+
+if show_debug_panel
+    if na(dbg_table)
+        dbg_table := table.new(position.top_right, 2, 8,
+             bgcolor      = color.new(color.black, 70),
+             border_width = 1)
+
+    int _std_sz  = array.size(std_H_arr)
+    int _frac_sz = array.size(frac_type_arr)
+    int _bi_sz2  = array.size(bi_pts_type_arr)
+    int _conf_sz = array.size(confirmed_lines)
+
+    // 最新分型描述（单行拼接，避免跨行 := 问题）
+    string _frac_str = _frac_sz == 0 ? "—" : (array.get(frac_type_arr, _frac_sz - 1) == 1 ? "顶" : "底") + " @" + str.tostring(array.get(frac_price_arr, _frac_sz - 1), "#.##") + " bar=" + str.tostring(array.get(frac_bar_arr, _frac_sz - 1))
+
+    // 最新笔端点描述
+    string _bi_str = _bi_sz2 == 0 ? "—" : (array.get(bi_pts_type_arr, _bi_sz2 - 1) == 1 ? "顶端" : "底端") + " @" + str.tostring(array.get(bi_pts_price_arr, _bi_sz2 - 1), "#.##") + " bar=" + str.tostring(array.get(bi_pts_bar_arr, _bi_sz2 - 1))
+
+    // pending 方向描述
+    string _pend_str = _bi_sz2 == 0 ? "—" : (array.get(bi_pts_type_arr, _bi_sz2 - 1) == -1 ? "↑向上" : "↓向下") + " from " + str.tostring(array.get(bi_pts_price_arr, _bi_sz2 - 1), "#.##")
+
+    table.cell(dbg_table, 0, 0, "字段",        text_color=color.yellow, text_size=size.small)
+    table.cell(dbg_table, 1, 0, "值",          text_color=color.yellow, text_size=size.small)
+    table.cell(dbg_table, 0, 1, "合成K线数",   text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 1, 1, str.tostring(_std_sz),  text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 0, 2, "分型总数",    text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 1, 2, str.tostring(_frac_sz), text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 0, 3, "笔端点数",    text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 1, 3, str.tostring(_bi_sz2),  text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 0, 4, "已确认笔数",  text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 1, 4, str.tostring(_conf_sz), text_color=color.white,  text_size=size.small)
+    table.cell(dbg_table, 0, 5, "最新分型",    text_color=color.new(#00BFFF, 0), text_size=size.small)
+    table.cell(dbg_table, 1, 5, _frac_str,    text_color=color.new(#00BFFF, 0), text_size=size.small)
+    table.cell(dbg_table, 0, 6, "最新笔端",    text_color=color.new(#00FF7F, 0), text_size=size.small)
+    table.cell(dbg_table, 1, 6, _bi_str,       text_color=color.new(#00FF7F, 0), text_size=size.small)
+    table.cell(dbg_table, 0, 7, "Pending方向", text_color=color.orange, text_size=size.small)
+    table.cell(dbg_table, 1, 7, _pend_str,     text_color=color.orange, text_size=size.small)
+
+// ============================================================
+// 文件结束
+// ============================================================
