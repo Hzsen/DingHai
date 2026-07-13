@@ -1124,77 +1124,108 @@ sourceMergedSeq   // B.mergedSeq
 confirmedOnSeq    // C.mergedSeq
 ```
 
-所有 detected fractal 可用于 debug 显示，但只有笔状态机筛选后的 effective endpoint 参与成笔。显示层必须能用不同样式区分 detected fractal 与 effective endpoint。
+所有 detected fractal 只属于底层事件流，可用于 debug 显示。它们不得直接参与成笔；必须先经过第 17.4 节的当前级别选择器。
+
+### 17.4 当前级别分型选择器 v1
+
+`LEVEL_FRACTAL_V1` 是工程化尺度选择器，不声称仅凭三 K 分型就推导出唯一正统级别。它在 detected fractal 事件流上组合两个因果门槛：
+
+```text
+minLevelMergedSpan = 4
+levelAtrLength = 14
+levelAtrMultiplier = 1.0
+requiredDistance = max(tentative.atr, opposite.atr) * levelAtrMultiplier
+```
+
+ATR 在 detected fractal 确认时冻结，此后不得随新 bar 重算旧事件的阈值。状态数组最后一个元素始终是可变的 `tentativeExtreme`，此前元素全部是 `confirmedLevelFractal`。
+
+每个新 detected fractal F 按以下规则处理：
+
+```text
+若没有 tentativeExtreme:
+    F 成为 tentativeExtreme
+
+若 F 与 tentativeExtreme 同类型:
+    TOP 仅在 F.price 更高时替换
+    BOTTOM 仅在 F.price 更低时替换
+    不生成 confirmedLevelFractal
+
+若 F 与 tentativeExtreme 反向:
+    directionValid := TOP->更低BOTTOM 或 BOTTOM->更高TOP
+    spanValid := F.sourceMergedSeq - tentative.sourceMergedSeq >= minLevelMergedSpan
+    scaleValid := abs(F.price - tentative.price) >= requiredDistance
+
+    若三个条件全部成立:
+        冻结旧 tentativeExtreme 为 confirmedLevelFractal
+        F 成为新的 tentativeExtreme
+    否则:
+        忽略 F，继续等待更充分的反向运动
+```
+
+不变量：
+
+* confirmedLevelFractal 顶底严格交替；
+* confirmedLevelFractal 冻结后不移动、不删除；
+* 最后一个 tentativeExtreme 可以被同类型更极端事件替换；
+* 离开段内未达到 ATR 与跨度门槛的小反向分型保留在 detected 层，但不升级；
+* MA5/MA10 和 MACD 只作为后续趋势/力度辅助，不参与 v1 硬过滤；
+* 默认隐藏 detected fractal，只显示 confirmedLevelFractal；两者使用不同样式。
+
+字段：
+
+```text
+levelFractalId
+type
+price
+rawBarIndex
+sourceMergedSeq
+atrAtDetection
+sourceFractalId
+confirmed
+```
 
 ---
 
 ## 18. 笔状态机规范
 
-### 18.1 成笔条件
+### 18.1 输入和成笔条件
 
-从有效端点 S 到新反向分型 E 生成 confirmed bi，必须同时满足：
+笔模块只消费第 17.4 节输出的 `confirmedLevelFractal`，不得再次消费 detected fractal。尺度、同类择优和最小跨度已经由 Level Selector 完成，笔模块不重复发明第二套筛选规则。
 
-```text
-E.type == -S.type
-E.sourceMergedSeq - S.sourceMergedSeq >= minMergedSpan
-S=BOTTOM and E=TOP    => E.price > S.price
-S=TOP    and E=BOTTOM => E.price < S.price
-```
-
-默认 `minMergedSpan = 4`。其精确定义是“两个分型中心的 `mergedSeq` 差大于等于 4”，不是“中间存在 4 根 K 线”。
-
-### 18.2 有效端点事件转换
-
-笔状态机分为两个阶段，防止已经成为上一笔终点的公共端点被后续新极值移动。
-
-阶段一 `BOOTSTRAP`：尚未生成任何 confirmed bi，保存可替换的 `bootstrapEndpoint`。
+每当新的 confirmedLevelFractal E 产生：
 
 ```text
-若 bootstrapEndpoint 为空:
-    bootstrapEndpoint = F
+若没有 previousConfirmedLevelFractal:
+    保存 E，等待下一端点
 
-若 F 与 bootstrapEndpoint 同类型:
-    TOP 且 F.price > bootstrap.price       => bootstrapEndpoint = F
-    BOTTOM 且 F.price < bootstrap.price    => bootstrapEndpoint = F
-    否则                                   => ignore F
+否则断言：
+    E.type == -previous.type
+    E.sourceMergedSeq - previous.sourceMergedSeq >= minLevelMergedSpan
+    previous=BOTTOM and E=TOP    => E.price > previous.price
+    previous=TOP    and E=BOTTOM => E.price < previous.price
 
-若 F 与 bootstrapEndpoint 反向且满足全部成笔条件:
-    生成 confirmed bi(bootstrapEndpoint -> F)
-    lockedAnchor = F
-    pendingOpposite = empty
-    状态切换到 ANCHORED
+断言全部成立：
+    直接生成 confirmed bi(previous -> E)
+    previous = E
 
-若 F 与 bootstrapEndpoint 反向但不满足条件:
-    不生成笔，不替换 bootstrapEndpoint
-    记录为 observation 后继续等待
+断言失败：
+    报告 invariant error，拒绝 push，不静默修正 Level Selector 输出
 ```
 
-阶段二 `ANCHORED`：至少已有一笔。`lockedAnchor` 是最后一笔冻结终点，也是下一笔冻结起点，绝不替换；`pendingOpposite` 只是尚未成笔的反向候选。
+### 18.2 职责边界
 
-```text
-若 F.type == lockedAnchor.type:
-    ignore F                      // 不移动冻结锚点
-
-若 F.type == -lockedAnchor.type:
-    若 pendingOpposite 为空或 F 比它更极端:
-        pendingOpposite = F
-    否则:
-        ignore F
-
-    若 pendingOpposite 相对 lockedAnchor 满足全部成笔条件:
-        生成 confirmed bi(lockedAnchor -> pendingOpposite)
-        lockedAnchor = pendingOpposite
-        pendingOpposite = empty
-```
-
-“更极端”的含义仍是顶取更高、底取更低。反向候选距离不足时可以保留并被后续同类型更极端候选替换，但不得替换 lockedAnchor，不得回滚任何 confirmed bi。
+* Level Selector 负责局部分型到当前级别端点的尺度升级；
+* 笔模块负责连接相邻的冻结当前级别端点；
+* confirmed bi 不回滚；
+* 最新 tentativeExtreme 不进入 confirmed bi；
+* MA、MACD 不直接改变笔端点。
 
 ### 18.3 confirmed bi 字段
 
 ```text
 biId
-startFractalId
-endFractalId
+startLevelFractalId
+endLevelFractalId
 startMergedSeq
 endMergedSeq
 startRawBar
@@ -1205,7 +1236,7 @@ direction          // UP or DOWN
 confirmedOnSeq
 ```
 
-相邻 confirmed bi 必须首尾连接：后一笔 `startFractalId ==` 前一笔 `endFractalId`，方向必须交替。若不满足，在 debug 模式报告 invariant error 并拒绝 push。
+相邻 confirmed bi 必须首尾连接：后一笔 `startLevelFractalId ==` 前一笔 `endLevelFractalId`，方向必须交替。若不满足，在 debug 模式报告 invariant error 并拒绝 push。
 
 ### 18.4 tentative bi
 

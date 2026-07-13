@@ -1,20 +1,21 @@
 // ============================================================
-// Chanlun_DH.pine — 缠论结构工程版 v0.6-phase1-ma
+// Chanlun_DH.pine — 缠论结构工程版 v0.7-phase1-level
 // Pine Script v6
 //
 // 规范：Chanlun_requirement.md v0.2，第 14–17、21 节
 // 当前范围：
 //   Phase 0  工程骨架与诊断
 //   Phase 1A 收盘后包含处理 / sealed merged bar
-//   Phase 1B detected fractal / 顶底分型标记
-//   Context  日线 5 SMA / 10 SMA（缠论“吻”辅助，暂不参与分型过滤）
+//   Phase 1B detected fractal / 底层局部分型
+//   Phase 1C ATR + merged span 当前级别分型选择器
+//   Context  日线 5 SMA / 10 SMA（缠论“吻”辅助，不参与硬过滤）
 //
 // 故意未实现：笔、tentative 笔、线段、中枢、背驰、多级别。
 // 主要验收周期：日 K。其他标准 OHLC 周期允许运行，但不属于本阶段重点。
 // ============================================================
 
 //@version=6
-indicator("缠论 DH — Phase 1 分型", overlay=true,
+indicator("缠论 DH — Phase 1C 当前级别分型", overlay=true,
      max_lines_count=50, max_labels_count=500, max_boxes_count=10)
 
 // ============================================================
@@ -28,15 +29,21 @@ const int FRAC_TOP    = 1
 const int FRAC_BOTTOM = -1
 
 const string GRP_MERGED = "1. 包含处理"
-const string GRP_FRAC   = "2. 分型"
-const string GRP_TREND  = "3. 日线交易均线"
-const string GRP_DEBUG  = "4. 诊断"
+const string GRP_FRAC   = "2. 底层分型"
+const string GRP_LEVEL  = "3. 当前级别筛选"
+const string GRP_TREND  = "4. 日线交易均线"
 
 int maxStoredMerged = input.int(5000, "最多保存 sealed 合成 K 线", minval=100, maxval=20000, group=GRP_MERGED)
 int maxStoredFractal = input.int(2500, "最多保存 detected fractal", minval=100, maxval=10000, group=GRP_FRAC)
-int maxVisibleFractal = input.int(120, "最多显示分型标记", minval=10, maxval=300, group=GRP_FRAC)
+int maxVisibleDetected = input.int(120, "最多显示底层分型", minval=10, maxval=300, group=GRP_FRAC)
 string fractalMode = input.string("LOOSE", "分型模式", options=["LOOSE", "STRICT"], group=GRP_FRAC)
-bool showFractals = input.bool(true, "显示顶底分型", group=GRP_FRAC)
+bool showDetectedFractals = input.bool(false, "显示底层 detected 分型（调试）", group=GRP_FRAC)
+int minLevelMergedSpan = input.int(4, "当前级别最小合成 K 跨度", minval=2, maxval=30, group=GRP_LEVEL)
+int levelAtrLength = input.int(14, "ATR 周期", minval=2, maxval=100, group=GRP_LEVEL)
+float levelAtrMultiplier = input.float(1.0, "反向确认 ATR 倍数", minval=0.1, maxval=10.0, step=0.1, group=GRP_LEVEL)
+int maxStoredLevelFractal = input.int(1200, "最多保存当前级别分型", minval=50, maxval=5000, group=GRP_LEVEL)
+int maxVisibleLevelFractal = input.int(80, "最多显示当前级别分型", minval=10, maxval=250, group=GRP_LEVEL)
+bool showLevelFractals = input.bool(true, "显示已确认的当前级别顶底", group=GRP_LEVEL)
 color topColor = input.color(color.new(color.red, 0), "顶分型颜色", group=GRP_FRAC)
 color bottomColor = input.color(color.new(color.lime, 0), "底分型颜色", group=GRP_FRAC)
 bool showTrendMAs = input.bool(true, "显示趋势均线", group=GRP_TREND)
@@ -44,16 +51,15 @@ int fastMaLength = input.int(5, "快线周期", minval=2, maxval=100, group=GRP_
 int slowMaLength = input.int(10, "慢线周期", minval=3, maxval=250, group=GRP_TREND)
 color fastMaColor = input.color(color.new(color.orange, 0), "快线颜色", group=GRP_TREND)
 color slowMaColor = input.color(color.new(color.blue, 0), "慢线颜色", group=GRP_TREND)
-bool showDebugPanel = input.bool(true, "显示诊断面板", group=GRP_DEBUG)
 
 bool isStrictMode = fractalMode == "STRICT"
-bool isPrimaryDailyTf = timeframe.isdaily
 
 // 5/10 日线用于观察飞吻、唇吻、湿吻和约一周交易节奏。
 // 两条均线只提供当前级别辅助背景，本阶段不得据此删除 detected fractal。
 // ta.sma 必须在每根 bar 上执行，保证历史序列计算一致。
 float fastTrendMa = ta.sma(close, fastMaLength)
 float slowTrendMa = ta.sma(close, slowMaLength)
+float levelAtr = ta.atr(levelAtrLength)
 
 plot(showTrendMAs ? fastTrendMa : na, title="Fast trend SMA", color=fastMaColor, linewidth=2)
 plot(showTrendMAs ? slowTrendMa : na, title="Slow trend SMA", color=slowMaColor, linewidth=2)
@@ -247,6 +253,7 @@ var array<float> fractalPriceArr  = array.new_float()
 var array<int> fractalRawBarArr   = array.new_int()
 var array<int> fractalSourceSeqArr = array.new_int()
 var array<int> fractalConfirmedSeqArr = array.new_int()
+var array<float> fractalAtrArr    = array.new_float()
 var array<label> fractalLabelArr  = array.new<label>()
 
 var int nextFractalId = 0
@@ -258,7 +265,7 @@ var int dualFractalErrorCount = 0
 f_fractal_arrays_equal() =>
     int n = array.size(fractalIdArr)
     bool equal = n == array.size(fractalTypeArr) and n == array.size(fractalPriceArr) and n == array.size(fractalRawBarArr)
-    equal := equal and n == array.size(fractalSourceSeqArr) and n == array.size(fractalConfirmedSeqArr)
+    equal := equal and n == array.size(fractalSourceSeqArr) and n == array.size(fractalConfirmedSeqArr) and n == array.size(fractalAtrArr)
     equal
 
 f_trim_fractal_history(int maxCount) =>
@@ -269,6 +276,49 @@ f_trim_fractal_history(int maxCount) =>
         array.shift(fractalRawBarArr)
         array.shift(fractalSourceSeqArr)
         array.shift(fractalConfirmedSeqArr)
+        array.shift(fractalAtrArr)
+
+// ============================================================
+// SECTION 3 — 当前级别分型选择器
+//
+// 数组最后一个元素永远是 tentative extreme；此前元素全部 confirmed。
+// 同类型只替换 tentative extreme。出现反向 detected fractal 时，只有
+// merged span 和 ATR 反向幅度同时达标，才冻结旧 tentative 并加入新
+// tentative。由此 confirmed level fractal 永不修改。
+// ============================================================
+
+var array<int> levelFractalIdArr = array.new_int()
+var array<int> levelTypeArr = array.new_int()
+var array<float> levelPriceArr = array.new_float()
+var array<int> levelRawBarArr = array.new_int()
+var array<int> levelMergedSeqArr = array.new_int()
+var array<float> levelAtrArr = array.new_float()
+var array<int> levelSourceFractalIdArr = array.new_int()
+var array<bool> levelConfirmedArr = array.new_bool()
+var array<label> levelLabelArr = array.new<label>()
+
+var int nextLevelFractalId = 0
+var int lastProcessedLevelSourceId = na
+var int confirmedLevelTopCount = 0
+var int confirmedLevelBottomCount = 0
+
+f_level_arrays_equal() =>
+    int n = array.size(levelFractalIdArr)
+    bool equal = n == array.size(levelTypeArr) and n == array.size(levelPriceArr) and n == array.size(levelRawBarArr)
+    equal := equal and n == array.size(levelMergedSeqArr) and n == array.size(levelAtrArr)
+    equal := equal and n == array.size(levelSourceFractalIdArr) and n == array.size(levelConfirmedArr)
+    equal
+
+f_trim_level_history(int maxCount) =>
+    while array.size(levelFractalIdArr) > maxCount
+        array.shift(levelFractalIdArr)
+        array.shift(levelTypeArr)
+        array.shift(levelPriceArr)
+        array.shift(levelRawBarArr)
+        array.shift(levelMergedSeqArr)
+        array.shift(levelAtrArr)
+        array.shift(levelSourceFractalIdArr)
+        array.shift(levelConfirmedArr)
 
 if mergedSealedEvent
     int mergedCount = array.size(mergedSeqArr)
@@ -304,30 +354,106 @@ if mergedSealedEvent
                 float fractalPrice = isTop ? midHigh : midLow
                 int fractalRawBar = isTop ? array.get(mergedHighBarArr, midIndex) : array.get(mergedLowBarArr, midIndex)
                 int confirmedSeq = array.get(mergedSeqArr, rightIndex)
+                float fractalAtr = levelAtr
+                int sourceFractalId = nextFractalId
 
-                array.push(fractalIdArr, nextFractalId)
+                array.push(fractalIdArr, sourceFractalId)
                 array.push(fractalTypeArr, fractalType)
                 array.push(fractalPriceArr, fractalPrice)
                 array.push(fractalRawBarArr, fractalRawBar)
                 array.push(fractalSourceSeqArr, midSeq)
                 array.push(fractalConfirmedSeqArr, confirmedSeq)
+                array.push(fractalAtrArr, fractalAtr)
 
                 if fractalType == FRAC_TOP
                     topFractalCount += 1
                 else
                     bottomFractalCount += 1
 
-                if showFractals
-                    string markerText = fractalType == FRAC_TOP ? "顶" : "底"
-                    color markerColor = fractalType == FRAC_TOP ? topColor : bottomColor
+                // 底层局部分型只作为调试层，默认隐藏并使用灰色小标记。
+                if showDetectedFractals
+                    string markerText = fractalType == FRAC_TOP ? "t" : "b"
                     label marker = label.new(fractalRawBar, fractalPrice, markerText,
                          xloc=xloc.bar_index, yloc=yloc.price,
                          style=fractalType == FRAC_TOP ? label.style_label_down : label.style_label_up,
-                         color=markerColor, textcolor=color.white, size=size.tiny)
+                         color=color.new(color.gray, 70), textcolor=color.silver, size=size.tiny)
                     array.push(fractalLabelArr, marker)
-                    while array.size(fractalLabelArr) > maxVisibleFractal
+                    while array.size(fractalLabelArr) > maxVisibleDetected
                         label oldest = array.shift(fractalLabelArr)
                         label.delete(oldest)
+
+                // Phase 1C：将 detected fractal 投入当前级别尺度选择器。
+                if (na(lastProcessedLevelSourceId) or sourceFractalId != lastProcessedLevelSourceId) and not na(fractalAtr)
+                    lastProcessedLevelSourceId := sourceFractalId
+                    int levelCount = array.size(levelFractalIdArr)
+
+                    if levelCount == 0
+                        array.push(levelFractalIdArr, nextLevelFractalId)
+                        array.push(levelTypeArr, fractalType)
+                        array.push(levelPriceArr, fractalPrice)
+                        array.push(levelRawBarArr, fractalRawBar)
+                        array.push(levelMergedSeqArr, midSeq)
+                        array.push(levelAtrArr, fractalAtr)
+                        array.push(levelSourceFractalIdArr, sourceFractalId)
+                        array.push(levelConfirmedArr, false)
+                        nextLevelFractalId += 1
+                    else
+                        int lastLevelIndex = levelCount - 1
+                        int lastLevelType = array.get(levelTypeArr, lastLevelIndex)
+                        float lastLevelPrice = array.get(levelPriceArr, lastLevelIndex)
+
+                        if fractalType == lastLevelType
+                            bool moreExtremeTop = fractalType == FRAC_TOP and fractalPrice > lastLevelPrice
+                            bool moreExtremeBottom = fractalType == FRAC_BOTTOM and fractalPrice < lastLevelPrice
+                            if moreExtremeTop or moreExtremeBottom
+                                // 最后一个永远是 tentative，因此允许同类型择优替换。
+                                array.set(levelPriceArr, lastLevelIndex, fractalPrice)
+                                array.set(levelRawBarArr, lastLevelIndex, fractalRawBar)
+                                array.set(levelMergedSeqArr, lastLevelIndex, midSeq)
+                                array.set(levelAtrArr, lastLevelIndex, fractalAtr)
+                                array.set(levelSourceFractalIdArr, lastLevelIndex, sourceFractalId)
+                        else
+                            int lastLevelSeq = array.get(levelMergedSeqArr, lastLevelIndex)
+                            float lastLevelAtr = array.get(levelAtrArr, lastLevelIndex)
+                            int mergedSpan = midSeq - lastLevelSeq
+                            float reversalDistance = math.abs(fractalPrice - lastLevelPrice)
+                            float requiredDistance = math.max(lastLevelAtr, fractalAtr) * levelAtrMultiplier
+                            bool directionValid = lastLevelType == FRAC_TOP ? fractalPrice < lastLevelPrice : fractalPrice > lastLevelPrice
+                            bool spanValid = mergedSpan >= minLevelMergedSpan
+                            bool scaleValid = reversalDistance >= requiredDistance
+
+                            if directionValid and spanValid and scaleValid
+                                // 反向运动已足够：冻结旧 tentative，当前 F 成为新的 tentative。
+                                array.set(levelConfirmedArr, lastLevelIndex, true)
+
+                                if lastLevelType == FRAC_TOP
+                                    confirmedLevelTopCount += 1
+                                else
+                                    confirmedLevelBottomCount += 1
+
+                                if showLevelFractals
+                                    int confirmedRawBar = array.get(levelRawBarArr, lastLevelIndex)
+                                    string levelText = lastLevelType == FRAC_TOP ? "顶" : "底"
+                                    color levelColor = lastLevelType == FRAC_TOP ? topColor : bottomColor
+                                    label levelMarker = label.new(confirmedRawBar, lastLevelPrice, levelText,
+                                         xloc=xloc.bar_index, yloc=yloc.price,
+                                         style=lastLevelType == FRAC_TOP ? label.style_label_down : label.style_label_up,
+                                         color=levelColor, textcolor=color.white, size=size.small)
+                                    array.push(levelLabelArr, levelMarker)
+                                    while array.size(levelLabelArr) > maxVisibleLevelFractal
+                                        label oldestLevelLabel = array.shift(levelLabelArr)
+                                        label.delete(oldestLevelLabel)
+
+                                array.push(levelFractalIdArr, nextLevelFractalId)
+                                array.push(levelTypeArr, fractalType)
+                                array.push(levelPriceArr, fractalPrice)
+                                array.push(levelRawBarArr, fractalRawBar)
+                                array.push(levelMergedSeqArr, midSeq)
+                                array.push(levelAtrArr, fractalAtr)
+                                array.push(levelSourceFractalIdArr, sourceFractalId)
+                                array.push(levelConfirmedArr, false)
+                                nextLevelFractalId += 1
+                                f_trim_level_history(maxStoredLevelFractal)
 
                 nextFractalId += 1
                 lastEvent := fractalType == FRAC_TOP ? "确认 detected TOP" : "确认 detected BOTTOM"
@@ -337,64 +463,10 @@ if not f_fractal_arrays_equal()
     invariantErrorCount += 1
     lastEvent := "错误：fractal 并行数组长度不一致"
 
-// ============================================================
-// SECTION 3 — 单例诊断面板
-// ============================================================
-
-var table debugTable = na
-
-if showDebugPanel
-    if na(debugTable)
-        debugTable := table.new(position.top_right, 2, 15,
-             bgcolor=color.new(color.black, 72), border_width=1)
-
-    int sealedCount = array.size(mergedSeqArr)
-    int storedFractalCount = array.size(fractalIdArr)
-    string directionText = lastResolvedDirection == DIR_UP ? "UP" : lastResolvedDirection == DIR_DOWN ? "DOWN" : "UNKNOWN"
-    string activeRange = na(activeHigh) ? "—" : str.tostring(activeLow, format.mintick) + " ~ " + str.tostring(activeHigh, format.mintick)
-    string invariantText = invariantErrorCount == 0 ? "OK" : "ERROR × " + str.tostring(invariantErrorCount)
-    color invariantColor = invariantErrorCount == 0 ? color.lime : color.red
-    string tfText = isPrimaryDailyTf ? "日 K（目标周期）" : timeframe.period + "（非主要验收周期）"
-    color tfColor = isPrimaryDailyTf ? color.lime : color.orange
-    string maRegimeText = na(fastTrendMa) or na(slowTrendMa) ? "数据不足" : fastTrendMa > slowTrendMa ? "BULL：快线 > 慢线" : fastTrendMa < slowTrendMa ? "BEAR：快线 < 慢线" : "NEUTRAL"
-    color maRegimeColor = na(fastTrendMa) or na(slowTrendMa) ? color.gray : fastTrendMa > slowTrendMa ? color.lime : fastTrendMa < slowTrendMa ? color.red : color.yellow
-    string fastMaText = na(fastTrendMa) ? "—" : str.tostring(fastTrendMa, format.mintick)
-    string slowMaText = na(slowTrendMa) ? "—" : str.tostring(slowTrendMa, format.mintick)
-
-    table.cell(debugTable, 0, 0, "Chanlun Phase 1", text_color=color.yellow)
-    table.cell(debugTable, 1, 0, fractalMode, text_color=color.yellow)
-    table.cell(debugTable, 0, 1, "图表周期", text_color=color.white)
-    table.cell(debugTable, 1, 1, tfText, text_color=tfColor)
-    table.cell(debugTable, 0, 2, "均线状态", text_color=color.white)
-    table.cell(debugTable, 1, 2, maRegimeText, text_color=maRegimeColor)
-    table.cell(debugTable, 0, 3, "快线 SMA " + str.tostring(fastMaLength), text_color=fastMaColor)
-    table.cell(debugTable, 1, 3, fastMaText, text_color=fastMaColor)
-    table.cell(debugTable, 0, 4, "慢线 SMA " + str.tostring(slowMaLength), text_color=slowMaColor)
-    table.cell(debugTable, 1, 4, slowMaText, text_color=slowMaColor)
-    table.cell(debugTable, 0, 5, "sealed merged", text_color=color.white)
-    table.cell(debugTable, 1, 5, str.tostring(sealedCount), text_color=color.white)
-    table.cell(debugTable, 0, 6, "active 区间", text_color=color.white)
-    table.cell(debugTable, 1, 6, activeRange, text_color=color.aqua)
-    table.cell(debugTable, 0, 7, "已解析方向", text_color=color.white)
-    table.cell(debugTable, 1, 7, directionText, text_color=color.aqua)
-    table.cell(debugTable, 0, 8, "包含合并", text_color=color.white)
-    table.cell(debugTable, 1, 8, str.tostring(containMergeCount), text_color=color.white)
-    table.cell(debugTable, 0, 9, "封口事件", text_color=color.white)
-    table.cell(debugTable, 1, 9, str.tostring(nonContainSealCount), text_color=color.white)
-    table.cell(debugTable, 0, 10, "保存分型", text_color=color.white)
-    table.cell(debugTable, 1, 10, str.tostring(storedFractalCount), text_color=color.white)
-    table.cell(debugTable, 0, 11, "顶 / 底总数", text_color=color.white)
-    table.cell(debugTable, 1, 11, str.tostring(topFractalCount) + " / " + str.tostring(bottomFractalCount), text_color=color.white)
-    table.cell(debugTable, 0, 12, "Bootstrap 次数", text_color=color.white)
-    table.cell(debugTable, 1, 12, str.tostring(bootstrapDirectionCount), text_color=color.white)
-    table.cell(debugTable, 0, 13, "不变量", text_color=color.white)
-    table.cell(debugTable, 1, 13, invariantText, text_color=invariantColor)
-    table.cell(debugTable, 0, 14, "最新事件", text_color=color.white)
-    table.cell(debugTable, 1, 14, lastEvent, text_color=color.silver)
-else if not na(debugTable)
-    table.delete(debugTable)
-    debugTable := na
+if not f_level_arrays_equal()
+    invariantErrorCount += 1
+    lastEvent := "错误：level fractal 并行数组长度不一致"
 
 // ============================================================
-// 文件结束 — Phase 1 不包含任何笔、线段或中枢逻辑。
+// 文件结束 — Phase 1C 不包含任何笔、线段或中枢逻辑。
 // ============================================================

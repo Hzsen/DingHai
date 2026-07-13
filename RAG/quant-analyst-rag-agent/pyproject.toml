@@ -11,11 +11,20 @@ requires-python = ">=3.10"
 authors = [{ name = "DingHai" }]
 dependencies = [
     "langgraph>=0.2.0",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+]
+research = [
+    "akshare>=1.16.0",
+    "pandas>=2.2.0",
+    "pyarrow>=17.0.0",
+]
+kimi = [
+    "python-dotenv>=1.0.0",
 ]
 
 [tool.setuptools.packages.find]
