@@ -1,4 +1,8 @@
-# TradingView 自动画缠论结构 Pine 脚本需求规格 v0.1
+# TradingView 自动画缠论结构 Pine 脚本需求规格 v0.2
+
+> 文档状态：工程实现基线（Normative Baseline）
+>
+> v0.2 新增的第 14–21 节属于规范性约束。若第 0–13 节中的早期描述、示例或建议与第 14–21 节冲突，以第 14–21 节为准。任何实现若有意偏离规范，必须在代码注释和阶段交付说明中列出偏离项，不得静默改变算法。
 
 ## 0. 目标
 
@@ -874,3 +878,556 @@ Claude 不允许：
 * 把价格穿越旧笔起点理解为“旧笔失效”；
 * 用 pivot 函数替代分型状态机；
 * 不区分 candidate、tentative、confirmed。
+
+---
+
+## 14. v0.2 规范术语与不变量
+
+### 14.1 术语唯一含义
+
+后续代码、调试面板和验收记录必须使用以下术语，不再用一个 `confirmed` 同时表达多个阶段：
+
+1. `raw bar`：TradingView 图表的一根原始 K 线。
+2. `active merged bar`：当前仍可能吸收后续 raw bar 的合成 K 线；它尚未封口，不参与分型确认。
+3. `sealed merged bar`：因下一根非包含 K 线出现而封口的合成 K 线；封口后不可修改。
+4. `detected fractal`：由连续三根 sealed merged bar 确认的原始分型事件；一经产生不可修改。
+5. `effective endpoint`：笔状态机当前采用的有效端点；尚未形成冻结笔时允许同类型择优替换。
+6. `confirmed bi`：两个有效端点满足全部成笔条件后生成的冻结笔。
+7. `tentative bi`：从最后一个冻结端点指向当前行情候选极值的显示对象；不进入高级结构。
+8. `confirmed segment`：仅由 confirmed bi 生成的工程简化线段。
+9. `active center`：已经由三笔确认、仍可能延伸的中枢。
+10. `closed center`：已退出延伸状态的冻结中枢。
+
+### 14.2 冻结与依赖不变量
+
+默认模式为 `STABLE`，必须满足：
+
+* sealed merged bar 不修改；
+* detected fractal 不修改、不删除；
+* confirmed bi 的起点、终点、价格、方向不修改；
+* confirmed segment 不读取 tentative bi；
+* center、divergence 和 signal 不读取 tentative bi；
+* 每个高级结构只依赖已经冻结的低级结构；
+* 显示开关只改变对象可见性，不改变算法数组和结构结果；
+* 相同品种、周期、参数和历史数据在刷新前后必须得到相同的 confirmed 结构。
+
+`AGGRESSIVE` 回滚模式不属于 v0.2 实现范围。相关旧描述仅作为未来扩展，不得在 Phase 1–4 中实现。
+
+### 14.3 ID 与索引
+
+每种冻结结构使用单调递增 ID。数组下标不是持久 ID，数组裁剪后不得用旧数组下标引用对象。
+
+必须区分：
+
+* `rawBarIndex`：原始 `bar_index`；
+* `mergedSeq`：sealed merged bar 的单调序号，从 0 开始；
+* `fractalId`、`biId`、`segmentId`、`centerId`：对应结构的持久 ID。
+
+所有间隔判断使用 `mergedSeq` 或 `biId/biSeq`，所有绘图横坐标使用 raw `bar_index` 或 `time`。禁止混用。
+
+---
+
+## 15. Pine 执行、实时更新与资源约束
+
+### 15.1 确认时机
+
+结构引擎只在 raw bar 收盘后消费该 bar：
+
+```text
+processRawBar := barstate.isconfirmed and bar_index != lastProcessedRawBar
+```
+
+历史 bar 在历史回放中视为已确认。实时未收盘 bar 的 high/low/close 只能更新 tentative 显示，不得写入 sealed merged bar、detected fractal、confirmed bi、segment 或 center 数组。
+
+### 15.2 幂等性
+
+每个模块保存最后消费的上游事件 ID：
+
+* 包含模块：`lastProcessedRawBar`；
+* 分型模块：`lastCheckedMergedSeq`；
+* 笔模块：`lastProcessedFractalId`；
+* 线段模块：`lastProcessedBiId`；
+* 中枢模块：`lastProcessedCenterBiId`。
+
+同一事件重复执行不得产生第二份结构或第二个绘图对象。禁止仅以价格或 raw bar index 去重，因为同一 raw bar 可能承载不同语义事件。
+
+### 15.3 计算数组与显示对象分离
+
+计算历史和显示窗口必须分离：
+
+* 计算数组保存算法需要的历史；
+* `line/label/box` 数组只保存当前可见对象；
+* 删除显示对象不得删除算法结构；
+* 输入开关变化后，脚本重算时必须能从算法结果重新生成可见窗口。
+
+### 15.4 资源预算
+
+默认预算：
+
+```text
+maxVisibleFractals = 120
+maxVisibleBi       = 80
+maxVisibleSegments = 40
+maxVisibleCenters  = 20
+maxStoredMerged    = 5000
+maxStoredFractals  = 2500
+maxStoredBi        = 1200
+maxStoredSegments  = 400
+maxStoredCenters   = 200
+```
+
+要求：
+
+* 可见对象超过预算时删除最旧对象，绝不等待 TradingView 隐式回收；
+* tentative line 每层最多一个，使用 `line.set_*` 复用；
+* debug table 使用单例；
+* debug label 同样受 `maxVisibleFractals` 或独立的更小预算约束；
+* 并行数组必须始终等长；每次 push/pop/shift 后在 debug 模式显示一致性状态；
+* v0.2 允许对最旧冻结结构做前缀裁剪，但裁剪前必须确保没有保留结构仍引用它；
+* 若安全裁剪尚未实现，必须提供 `maxBarsToProcess` 并在交付限制中说明，而不是无限增长。
+
+### 15.5 支持边界
+
+v0.2 只保证标准 OHLC 图表的当前周期：
+
+* 不保证 Heikin Ashi、Renko、Kagi、Point & Figure 等非标准图表；
+* 不处理复权方式改变造成的历史结构迁移；
+* 允许交易时段缺口，缺口不插入虚拟 K 线；
+* 第一版不实现 lower timeframe engine；
+* higher/lower timeframe、多级别状态必须在单级别 Phase 1–4 验收后另立规格。
+
+---
+
+## 16. 包含处理的确定性算法
+
+### 16.1 合成 K 线字段
+
+active 和 sealed merged bar 均至少保存：
+
+```text
+mergedSeq
+startRawBar
+endRawBar
+high
+low
+highRawBar
+lowRawBar
+openOfFirstRawBar
+closeOfLastRawBar
+directionContext  // UP, DOWN
+```
+
+同价极值索引采用“较早者优先”：只有严格更高或严格更低时才更新 `highRawBar/lowRawBar`。这样刷新前后坐标确定。
+
+### 16.2 包含判定
+
+对 active merged bar `A` 与新收盘 raw bar `B`：
+
+```text
+A_contains_B := A.high >= B.high and A.low <= B.low
+B_contains_A := B.high >= A.high and B.low <= A.low
+hasContain   := A_contains_B or B_contains_A
+```
+
+边界相等仍算包含。若不包含，则 B 相对 A 必然可归为：
+
+```text
+UP   := B.high > A.high and B.low > A.low
+DOWN := B.high < A.high and B.low < A.low
+```
+
+不能满足其中之一时，在 debug 模式记录 invariant error，不静默猜测。
+
+### 16.3 方向状态
+
+引擎保存 `lastResolvedDirection`。
+
+* 每次遇到非包含关系时，按 16.2 更新为 UP 或 DOWN；
+* 处理包含关系时沿用 `lastResolvedDirection`；
+* 初始化尚无方向时，使用以下唯一 bootstrap 规则产生临时方向：
+
+```text
+若 B.close > A.close                    => UP
+若 B.close < A.close                    => DOWN
+若 close 相等且 midpoint(B)>midpoint(A) => UP
+若 close 相等且 midpoint(B)<midpoint(A) => DOWN
+完全相等                               => UP
+```
+
+bootstrap 方向只负责消除初始化歧义；首个非包含关系出现后立即由正式方向覆盖，不回算已经封口的历史。
+
+### 16.4 合并与封口
+
+若 `hasContain`：
+
+```text
+UP:
+  newHigh = max(A.high, B.high)
+  newLow  = max(A.low,  B.low)
+
+DOWN:
+  newHigh = min(A.high, B.high)
+  newLow  = min(A.low,  B.low)
+```
+
+并更新 `endRawBar`、`closeOfLastRawBar` 及实际贡献新 high/low 的 raw bar index。不得将合并后并未采用的 B.high/B.low 的索引写入极值索引。
+
+若 `not hasContain`：
+
+1. 将 A 作为 sealed merged bar push；
+2. A 获得下一个 `mergedSeq`；
+3. 用 B 初始化新的 active merged bar；
+4. 发出且只发出一个 `MERGED_SEALED` 事件。
+
+active merged bar 永不参与三 K 分型。数据集最后一个 active merged bar 因缺少右侧非包含确认，允许始终不封口。
+
+---
+
+## 17. 分型检测规范
+
+### 17.1 检测输入与确认延迟
+
+仅在新的 sealed merged bar `C` 产生后，检查最后三根 sealed merged bar `A,B,C`。B 是唯一候选中心。
+
+默认 `LOOSE`：
+
+```text
+TOP    := B.high > A.high and B.high > C.high
+BOTTOM := B.low  < A.low  and B.low  < C.low
+```
+
+可选 `STRICT`：
+
+```text
+TOP    := looseTop    and B.low  > A.low  and B.low  > C.low
+BOTTOM := looseBottom and B.high < A.high and B.high < C.high
+```
+
+全部使用严格大于/小于；相等不构成分型。
+
+### 17.2 双重分型防御
+
+正常的非包含 sealed 序列不应让同一 B 同时成为 TOP 和 BOTTOM。若实现检测到二者同时成立：
+
+* 不产生 detected fractal；
+* debug 面板增加 `dualFractalError`；
+* 不使用 `if/else` 顺序静默选择顶或底。
+
+### 17.3 detected fractal 字段
+
+```text
+fractalId
+type              // TOP=+1, BOTTOM=-1
+price             // TOP=B.high, BOTTOM=B.low
+rawBarIndex       // TOP=B.highRawBar, BOTTOM=B.lowRawBar
+sourceMergedSeq   // B.mergedSeq
+confirmedOnSeq    // C.mergedSeq
+```
+
+所有 detected fractal 可用于 debug 显示，但只有笔状态机筛选后的 effective endpoint 参与成笔。显示层必须能用不同样式区分 detected fractal 与 effective endpoint。
+
+---
+
+## 18. 笔状态机规范
+
+### 18.1 成笔条件
+
+从有效端点 S 到新反向分型 E 生成 confirmed bi，必须同时满足：
+
+```text
+E.type == -S.type
+E.sourceMergedSeq - S.sourceMergedSeq >= minMergedSpan
+S=BOTTOM and E=TOP    => E.price > S.price
+S=TOP    and E=BOTTOM => E.price < S.price
+```
+
+默认 `minMergedSpan = 4`。其精确定义是“两个分型中心的 `mergedSeq` 差大于等于 4”，不是“中间存在 4 根 K 线”。
+
+### 18.2 有效端点事件转换
+
+笔状态机分为两个阶段，防止已经成为上一笔终点的公共端点被后续新极值移动。
+
+阶段一 `BOOTSTRAP`：尚未生成任何 confirmed bi，保存可替换的 `bootstrapEndpoint`。
+
+```text
+若 bootstrapEndpoint 为空:
+    bootstrapEndpoint = F
+
+若 F 与 bootstrapEndpoint 同类型:
+    TOP 且 F.price > bootstrap.price       => bootstrapEndpoint = F
+    BOTTOM 且 F.price < bootstrap.price    => bootstrapEndpoint = F
+    否则                                   => ignore F
+
+若 F 与 bootstrapEndpoint 反向且满足全部成笔条件:
+    生成 confirmed bi(bootstrapEndpoint -> F)
+    lockedAnchor = F
+    pendingOpposite = empty
+    状态切换到 ANCHORED
+
+若 F 与 bootstrapEndpoint 反向但不满足条件:
+    不生成笔，不替换 bootstrapEndpoint
+    记录为 observation 后继续等待
+```
+
+阶段二 `ANCHORED`：至少已有一笔。`lockedAnchor` 是最后一笔冻结终点，也是下一笔冻结起点，绝不替换；`pendingOpposite` 只是尚未成笔的反向候选。
+
+```text
+若 F.type == lockedAnchor.type:
+    ignore F                      // 不移动冻结锚点
+
+若 F.type == -lockedAnchor.type:
+    若 pendingOpposite 为空或 F 比它更极端:
+        pendingOpposite = F
+    否则:
+        ignore F
+
+    若 pendingOpposite 相对 lockedAnchor 满足全部成笔条件:
+        生成 confirmed bi(lockedAnchor -> pendingOpposite)
+        lockedAnchor = pendingOpposite
+        pendingOpposite = empty
+```
+
+“更极端”的含义仍是顶取更高、底取更低。反向候选距离不足时可以保留并被后续同类型更极端候选替换，但不得替换 lockedAnchor，不得回滚任何 confirmed bi。
+
+### 18.3 confirmed bi 字段
+
+```text
+biId
+startFractalId
+endFractalId
+startMergedSeq
+endMergedSeq
+startRawBar
+endRawBar
+startPrice
+endPrice
+direction          // UP or DOWN
+confirmedOnSeq
+```
+
+相邻 confirmed bi 必须首尾连接：后一笔 `startFractalId ==` 前一笔 `endFractalId`，方向必须交替。若不满足，在 debug 模式报告 invariant error 并拒绝 push。
+
+### 18.4 tentative bi
+
+tentative bi 仅是显示投影，不是算法结构：
+
+* 起点为最后一个 confirmed bi 的 `lockedAnchor`；没有 confirmed bi 时可从 `bootstrapEndpoint` 显示；
+* 若起点是 BOTTOM，终点取起点之后已收盘 raw bar 与当前实时 bar 的最高 high；
+* 若起点是 TOP，终点取起点之后已收盘 raw bar 与当前实时 bar 的最低 low；
+* 新极值只用 `line.set_xy*` 更新单例虚线；
+* 它不得进入 confirmed bi 数组；
+* 关闭显示后删除该 line，但候选计算状态保留；
+* confirmed bi 产生后，旧 tentative line 复用为下一方向，不转成 confirmed line 对象。
+
+### 18.5 不重绘定义
+
+“不重绘”特指：raw bar 收盘并生成 confirmed bi 后，该笔坐标和字段在后续 bar、刷新、切换显示选项时保持不变。实时未收盘 bar 上 tentative line 的移动不算重绘。
+
+---
+
+## 19. 工程简化线段 v1
+
+### 19.1 范围声明
+
+本节定义的是 `ENGINEERING_SEGMENT_V1`，不是正统缠论特征序列线段。界面和代码注释必须明确标注“工程线段”。未来正统算法必须使用新的模式名，不得静默替换 v1 结果。
+
+### 19.2 输入与核心规则
+
+输入只允许 confirmed bi endpoints。把 confirmed bi 端点视为序列 `P0,P1,...,Pn`。
+
+工程线段使用“笔端点上的高一级摆动”算法：
+
+```text
+segment candidate 起点 S 为当前有效线段端点
+BOOTSTRAP 阶段同类型端点仅保留更极端者
+ANCHORED 阶段 locked anchor 不替换，反向 pending endpoint 才允许同类择优
+新端点 E 与 S 反向时，只有满足：
+    E.biEndpointSeq - S.biEndpointSeq >= 3
+    且方向价格有效
+才确认一条 segment
+```
+
+这里差值 `>= 3` 表示线段跨越至少三笔。方向价格有效规则与笔对称：底端到顶端必须上涨，顶端到底端必须下跌。
+
+### 19.3 状态转换
+
+算法复用第 18.2 节修正后的双阶段模型，但输入事件是“新 confirmed bi 产生后新增的冻结终点”，间隔单位是笔数：
+
+* 第一条 segment 产生前，`bootstrapSegmentEndpoint` 可同类择优；
+* 第一条 segment 产生后，最后一个 segment 终点成为 `lockedSegmentAnchor`；
+* locked segment anchor 不得被后续同类型端点替换；
+* 只允许 `pendingOppositeSegmentEndpoint` 同类择优；
+* pending endpoint 满足跨度和价格方向条件后生成新 confirmed segment，并成为新的 locked anchor。
+
+confirmed segment 一旦产生即冻结，不因后续端点修改。
+
+字段：
+
+```text
+segmentId
+mode = ENGINEERING_SEGMENT_V1
+startBiEndpointId
+endBiEndpointId
+startBiId
+endBiId
+startRawBar
+endRawBar
+startPrice
+endPrice
+direction
+confirmed
+```
+
+验收不再使用“数量明显少于笔”这种主观标准，而使用：
+
+* 每条线段跨越至少 3 条 confirmed bi；
+* 线段端点类型交替；
+* 相邻线段首尾连接；
+* confirmed segment 坐标冻结；
+* 同一 confirmed bi 事件不得重复生成线段。
+
+---
+
+## 20. 笔级中枢 v1 状态机
+
+### 20.1 输入与重叠
+
+`BI_CENTER_V1` 只读取 confirmed bi。对笔 i：
+
+```text
+intervalHigh(i) = max(startPrice, endPrice)
+intervalLow(i)  = min(startPrice, endPrice)
+```
+
+三个连续笔 `i-2,i-1,i` 的初始公共区：
+
+```text
+candidateZG = min(intervalHigh(i-2), intervalHigh(i-1), intervalHigh(i))
+candidateZD = max(intervalLow(i-2),  intervalLow(i-1),  intervalLow(i))
+```
+
+默认要求 `candidateZG > candidateZD`，即必须有正宽度重叠。`==` 仅是接触，不构成中枢。
+
+### 20.2 创建、延伸与关闭
+
+状态只有 `NONE` 和 `ACTIVE`；关闭后 push 为 `CLOSED`。
+
+```text
+NONE:
+    每个新 confirmed bi 到来时检查最新三笔
+    若 candidateZG > candidateZD:
+        创建 ACTIVE center
+        startBiId = i-2
+        endBiId = i
+        zd = candidateZD
+        zg = candidateZG
+        gg/dd = 三笔完整价格区间的最大/最小值
+
+ACTIVE:
+    对新笔 i 计算 overlap：
+        overlapZG = min(center.zg, intervalHigh(i))
+        overlapZD = max(center.zd, intervalLow(i))
+    若 overlapZG > overlapZD:
+        center.zg = overlapZG
+        center.zd = overlapZD
+        center.endBiId = i
+        center.gg/dd 扩展到包含该笔
+    否则:
+        将当前 center 冻结为 CLOSED
+        状态设为 NONE
+        立即用包含新笔 i 的最新三笔再尝试创建新 center
+```
+
+中枢核心区在延伸时只允许保持或收窄，不允许扩大。`gg/dd` 可以扩大。一个新笔最多延伸一个 active center，并最多触发一个新 center，禁止同一滑动窗口重复创建 box。
+
+### 20.3 时间坐标和字段
+
+```text
+centerId
+level = BI_CENTER_V1
+startBiId
+endBiId
+startRawBar = 第一个构成笔的 startRawBar
+endRawBar   = 最后纳入笔的 endRawBar
+zd
+zg
+dd
+gg
+status      // ACTIVE or CLOSED
+```
+
+ACTIVE box 可以更新右边界和上下边界；CLOSED box 冻结。关闭显示不改变状态。
+
+---
+
+## 21. 分阶段交付、测试与验收门槛
+
+### 21.1 每阶段交付物
+
+每个阶段必须同时交付：
+
+1. 可完整复制到 TradingView 的 Pine v6 源码；
+2. 本阶段实现范围；
+3. 明确未实现范围；
+4. 状态数组及关键不变量说明；
+5. TradingView 手工验证步骤；
+6. 至少一组小型确定性序列的逐事件预期结果；
+7. 已知限制；
+8. 与本规范的偏离清单；无偏离时明确写“无”。
+
+### 21.2 Phase 0：骨架与诊断
+
+只实现输入、枚举/常量、单例 debug table、资源计数和 invariant error 展示。验收：代码编译；开关不创建无限对象；未运行结构算法。
+
+### 21.3 Phase 1A：包含处理
+
+只实现第 16 节。必须用至少以下合成序列验收：
+
+```text
+上行包含：A[10,5], B[9,6]，方向 UP   => merged[10,6]
+下行包含：A[10,5], B[9,6]，方向 DOWN => merged[9,5]
+向上非包含：A[10,5], B[11,6]         => seal A, active B
+向下非包含：A[10,5], B[9,4]          => seal A, active B
+连续包含：三根输入只产生一个 active/最终 sealed 结果
+```
+
+验收：sealed 数据不再变化；极值 raw index 与实际采用值一致；同一 raw bar 不重复消费。
+
+### 21.4 Phase 1B：分型
+
+只实现第 17 节。构造 merged 序列验证：单顶、单底、相等不成分型、严格/宽松模式差异、同一 B 只检查一次。
+
+### 21.5 Phase 2：笔
+
+只实现第 18 节。至少覆盖：
+
+* 同顶取更高、同底取更低；
+* 同类型不更极端时忽略；
+* 反向但 span 不足；
+* span 足够但价格方向无效；
+* 正常上下笔交替；
+* confirmed 笔生成后出现新高/新低仍不移动；
+* tentative line 盘中更新但不写入高级数组。
+
+Phase 2 未通过前禁止实现 segment 和 center。
+
+### 21.6 Phase 3：工程线段
+
+严格实现第 19 节，并用人工 bi endpoint 序列独立验证。不得通过修改笔算法来迎合线段输出。
+
+### 21.7 Phase 4：笔级中枢
+
+严格实现第 20 节。至少验证：无重叠、恰好接触、三笔创建、第四笔延伸并收窄、离开后关闭、同一新笔触发旧中枢关闭并尝试新中枢。
+
+### 21.8 回归门槛
+
+每完成一个阶段，必须重新验证此前全部阶段。任何阶段只有同时满足以下条件才算通过：
+
+* Pine v6 编译无错误；
+* 历史加载与刷新后 confirmed 结构一致；
+* 实时未收盘变化只影响 tentative 对象；
+* 无数组越界；
+* 并行数组等长；
+* 对象数量不超过配置预算；
+* debug 关闭不改变结构数量和坐标；
+* 未实现模块没有占位结果冒充 confirmed 输出。

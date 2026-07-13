@@ -1,0 +1,8 @@
+strategy_name,factor_name,start_date,end_date,annual_return,sharpe,max_drawdown,volatility,turnover,transaction_cost_bps,benchmark_return
+momentum_long_short,momentum_60d,2020-01-01,2024-12-31,0.118,0.82,-0.245,0.176,0.92,12.0,0.136
+low_volatility_strategy,volatility_20d,2020-01-01,2024-12-31,0.101,0.97,-0.184,0.132,0.48,8.0,0.136
+liquidity_quality_strategy,liquidity_dollar_volume,2020-01-01,2024-12-31,0.094,0.78,-0.166,0.121,0.36,6.0,0.136
+sector_rotation_strategy,sector_relative_strength,2020-01-01,2024-12-31,0.127,0.91,-0.212,0.158,0.64,10.0,0.136
+momentum_long_short,momentum_60d,2020-03-01,2020-03-31,-0.182,-1.35,-0.218,0.412,1.18,15.0,-0.124
+low_volatility_strategy,volatility_20d,2020-03-01,2020-03-31,-0.072,-0.52,-0.096,0.286,0.55,8.0,-0.124
+sector_rotation_strategy,sector_relative_strength,2020-03-01,2020-03-31,-0.104,-0.74,-0.138,0.331,0.76,11.0,-0.124

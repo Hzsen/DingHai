@@ -128,3 +128,18 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Quant RAG generated artifacts
+RAG/quant-analyst-rag-agent/data/processed/*.db
+RAG/quant-analyst-rag-agent/data/processed/*.pkl
+RAG/quant-analyst-rag-agent/data/processed/vector_index/

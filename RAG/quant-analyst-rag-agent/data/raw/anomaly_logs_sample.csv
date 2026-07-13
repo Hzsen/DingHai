@@ -1,0 +1,6 @@
+date,ticker,anomaly_type,description,severity
+2020-03-09,AAPL,momentum_reversal,High prior winners sold off as volatility spiked and investors de-risked crowded growth exposure,high
+2020-03-12,MSFT,momentum_reversal,Momentum basket experienced broad deleveraging during the COVID liquidity shock,high
+2020-03-16,JPM,liquidity_shock,Dollar volume surged while bid-ask conditions deteriorated in financials,medium
+2020-03-18,XOM,sector_dislocation,Energy names weakened sharply as oil demand and credit concerns rose,high
+2024-12-31,XLK,sector_rotation,Technology sector relative strength remained positive but less extreme than early-year peaks,low

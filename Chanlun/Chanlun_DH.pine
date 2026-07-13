@@ -1,537 +1,400 @@
 // ============================================================
-// Chanlun_DH.pine  —  缠论自动画图  v0.4
+// Chanlun_DH.pine — 缠论结构工程版 v0.6-phase1-ma
 // Pine Script v6
 //
-// 需求规格：Chanlun_requirement.md
+// 规范：Chanlun_requirement.md v0.2，第 14–17、21 节
+// 当前范围：
+//   Phase 0  工程骨架与诊断
+//   Phase 1A 收盘后包含处理 / sealed merged bar
+//   Phase 1B detected fractal / 顶底分型标记
+//   Context  日线 5 SMA / 10 SMA（缠论“吻”辅助，暂不参与分型过滤）
 //
-// 版本路线：
-//   v0.4  pending 未完成笔  ← 当前版本
-//   v0.5  中枢 box          (待实现)
-//   v0.6  递归高级别笔      (待实现)
-//   v0.7  买卖点 / 报警     (待实现)
-//
-// 架构原则：
-//   - 修改全局标量的逻辑全部在 global scope 直接执行
-//   - 函数只做纯计算 / 数组操作（不修改全局标量）
-//   - f_bi_pop_tail() 返回 bool，内部同时检查所有并行数组一致性
-//   - 回退循环：每次 pop 之前重新检查 size，不盲目双 pop
-//   - 同向替换：只在 pts_sz >= 2 时才去同步 confirmed line 终点
-//   - 分型去重：last_checked_mid_seq 防止同一 mid 被重复检测
+// 故意未实现：笔、tentative 笔、线段、中枢、背驰、多级别。
+// 主要验收周期：日 K。其他标准 OHLC 周期允许运行，但不属于本阶段重点。
 // ============================================================
 
 //@version=6
-indicator("缠论 DH v0.4", overlay=true,
-     max_lines_count  = 500,
-     max_labels_count = 500,
-     max_boxes_count  = 100)
+indicator("缠论 DH — Phase 1 分型", overlay=true,
+     max_lines_count=50, max_labels_count=500, max_boxes_count=10)
 
 // ============================================================
-// ██  SECTION 0：用户输入
+// SECTION 0 — 输入、常量与诊断配置
 // ============================================================
 
-grp_std   = "标准化K线"
-grp_frac  = "分型"
-grp_bi    = "笔"
-grp_debug = "Debug"
+const int DIR_UNKNOWN = 0
+const int DIR_UP      = 1
+const int DIR_DOWN    = -1
+const int FRAC_TOP    = 1
+const int FRAC_BOTTOM = -1
 
-show_std_debug   = input.bool(false, "显示标准化K线序号标记", group=grp_std)
-show_frac_mark   = input.bool(true,  "显示顶底分型 ▼▲ 标记", group=grp_frac)
-show_bi_conf     = input.bool(true,  "显示已确认笔（实线）",  group=grp_bi)
-show_bi_pend     = input.bool(true,  "显示 Pending 笔（虚线）", group=grp_bi)
-show_bi_endpt    = input.bool(true,  "显示笔端点 T/B 标记",   group=grp_bi)
-show_debug_panel = input.bool(true,  "显示 Debug Panel",      group=grp_debug)
+const string GRP_MERGED = "1. 包含处理"
+const string GRP_FRAC   = "2. 分型"
+const string GRP_TREND  = "3. 日线交易均线"
+const string GRP_DEBUG  = "4. 诊断"
 
-bi_color   = input.color(color.new(color.blue,   0), "已确认笔颜色", group=grp_bi)
-bi_width   = input.int  (2, "已确认笔宽度", minval=1, maxval=5,      group=grp_bi)
-pend_color = input.color(color.new(color.orange, 0), "Pending 笔颜色", group=grp_bi)
-pend_width = input.int  (1, "Pending 笔宽度", minval=1, maxval=5,    group=grp_bi)
+int maxStoredMerged = input.int(5000, "最多保存 sealed 合成 K 线", minval=100, maxval=20000, group=GRP_MERGED)
+int maxStoredFractal = input.int(2500, "最多保存 detected fractal", minval=100, maxval=10000, group=GRP_FRAC)
+int maxVisibleFractal = input.int(120, "最多显示分型标记", minval=10, maxval=300, group=GRP_FRAC)
+string fractalMode = input.string("LOOSE", "分型模式", options=["LOOSE", "STRICT"], group=GRP_FRAC)
+bool showFractals = input.bool(true, "显示顶底分型", group=GRP_FRAC)
+color topColor = input.color(color.new(color.red, 0), "顶分型颜色", group=GRP_FRAC)
+color bottomColor = input.color(color.new(color.lime, 0), "底分型颜色", group=GRP_FRAC)
+bool showTrendMAs = input.bool(true, "显示趋势均线", group=GRP_TREND)
+int fastMaLength = input.int(5, "快线周期", minval=2, maxval=100, group=GRP_TREND)
+int slowMaLength = input.int(10, "慢线周期", minval=3, maxval=250, group=GRP_TREND)
+color fastMaColor = input.color(color.new(color.orange, 0), "快线颜色", group=GRP_TREND)
+color slowMaColor = input.color(color.new(color.blue, 0), "慢线颜色", group=GRP_TREND)
+bool showDebugPanel = input.bool(true, "显示诊断面板", group=GRP_DEBUG)
 
-// 需求 §12.2：两端点 seq 差 >= 此值即满足成笔间隔，默认 4
-bi_min_span = input.int(4, "成笔最小合成K线间隔", minval=2, maxval=20, group=grp_bi)
+bool isStrictMode = fractalMode == "STRICT"
+bool isPrimaryDailyTf = timeframe.isdaily
+
+// 5/10 日线用于观察飞吻、唇吻、湿吻和约一周交易节奏。
+// 两条均线只提供当前级别辅助背景，本阶段不得据此删除 detected fractal。
+// ta.sma 必须在每根 bar 上执行，保证历史序列计算一致。
+float fastTrendMa = ta.sma(close, fastMaLength)
+float slowTrendMa = ta.sma(close, slowMaLength)
+
+plot(showTrendMAs ? fastTrendMa : na, title="Fast trend SMA", color=fastMaColor, linewidth=2)
+plot(showTrendMAs ? slowTrendMa : na, title="Slow trend SMA", color=slowMaColor, linewidth=2)
 
 // ============================================================
-// ██  SECTION 1：标准化K线状态机
-//
-// 需求 §3.4：highBarIndex 与 lowBarIndex 必须分开存储
-// new_std_sealed：每 bar 重置为 false，封口时才置 true
+// SECTION 1 — sealed merged bar 历史
+// 所有并行数组必须等长。mergedSeq 是持久 ID，不等同于数组下标。
 // ============================================================
 
-var array<float> std_H_arr       = array.new<float>()
-var array<float> std_L_arr       = array.new<float>()
-var array<int>   std_H_bar_arr   = array.new<int>()
-var array<int>   std_L_bar_arr   = array.new<int>()
-var array<int>   std_end_bar_arr = array.new<int>()
-var array<int>   std_seq_arr     = array.new<int>()
+var array<int> mergedSeqArr      = array.new_int()
+var array<int> mergedStartArr    = array.new_int()
+var array<int> mergedEndArr      = array.new_int()
+var array<float> mergedHighArr   = array.new_float()
+var array<float> mergedLowArr    = array.new_float()
+var array<int> mergedHighBarArr  = array.new_int()
+var array<int> mergedLowBarArr   = array.new_int()
+var array<float> mergedOpenArr   = array.new_float()
+var array<float> mergedCloseArr  = array.new_float()
+var array<int> mergedDirArr      = array.new_int()
 
-var float curr_std_H       = na
-var float curr_std_L       = na
-var int   curr_std_H_bar   = na
-var int   curr_std_L_bar   = na
-var int   curr_std_end_bar = na
-var int   curr_std_seq     = -1
+// 当前 active merged bar。它未封口，绝不参与分型检测。
+var int activeStartBar   = na
+var int activeEndBar     = na
+var float activeHigh     = na
+var float activeLow      = na
+var int activeHighBar    = na
+var int activeLowBar     = na
+var float activeOpen     = na
+var float activeClose    = na
+var int activeDirection  = DIR_UNKNOWN
 
-var bool new_std_sealed = false
-new_std_sealed := false
+var int lastResolvedDirection = DIR_UNKNOWN
+var int lastProcessedRawBar = na
+var int nextMergedSeq = 0
+var bool mergedSealedEvent = false
 
-// 判断包含关系（需求 §3.1）
-f_has_contain(float aH, float aL, float bH, float bL) =>
-    (aH >= bH and aL <= bL) or (bH >= aH and bL <= aL)
+// 诊断计数只增不减。
+var int containMergeCount = 0
+var int nonContainSealCount = 0
+var int bootstrapDirectionCount = 0
+var int invariantErrorCount = 0
+var string lastEvent = "等待首根已收盘 K 线"
 
-// 已封口合成K线方向（需求 §3.2）
-f_std_dir() =>
-    int sz = array.size(std_H_arr)
-    if sz < 2
-        0
+f_has_containment(float aHigh, float aLow, float bHigh, float bLow) =>
+    bool aContainsB = aHigh >= bHigh and aLow <= bLow
+    bool bContainsA = bHigh >= aHigh and bLow <= aLow
+    aContainsB or bContainsA
+
+f_bootstrap_direction(float aClose, float aHigh, float aLow, float bClose, float bHigh, float bLow) =>
+    int result = DIR_UP
+    if bClose > aClose
+        result := DIR_UP
+    else if bClose < aClose
+        result := DIR_DOWN
     else
-        array.get(std_H_arr, sz - 1) >= array.get(std_H_arr, sz - 2) ? 1 : -1
+        float aMid = (aHigh + aLow) * 0.5
+        float bMid = (bHigh + bLow) * 0.5
+        result := bMid < aMid ? DIR_DOWN : DIR_UP
+    result
 
-// 标准化K线主逻辑（需求 §3.3，global scope）
-if na(curr_std_H)
-    curr_std_H       := high
-    curr_std_L       := low
-    curr_std_H_bar   := bar_index
-    curr_std_L_bar   := bar_index
-    curr_std_end_bar := bar_index
-else
-    bool _hc = f_has_contain(curr_std_H, curr_std_L, high, low)
-    if _hc
-        int _dir = f_std_dir()
-        if _dir >= 0
-            if high > curr_std_H
-                curr_std_H     := high
-                curr_std_H_bar := bar_index
-            if low > curr_std_L
-                curr_std_L     := low
-                curr_std_L_bar := bar_index
-        else
-            if high < curr_std_H
-                curr_std_H     := high
-                curr_std_H_bar := bar_index
-            if low < curr_std_L
-                curr_std_L     := low
-                curr_std_L_bar := bar_index
-        curr_std_end_bar := bar_index
+f_merged_arrays_equal() =>
+    int n = array.size(mergedSeqArr)
+    bool equal = n == array.size(mergedStartArr) and n == array.size(mergedEndArr) and n == array.size(mergedHighArr)
+    equal := equal and n == array.size(mergedLowArr) and n == array.size(mergedHighBarArr) and n == array.size(mergedLowBarArr)
+    equal := equal and n == array.size(mergedOpenArr) and n == array.size(mergedCloseArr) and n == array.size(mergedDirArr)
+    equal
+
+f_trim_merged_history(int maxCount) =>
+    while array.size(mergedSeqArr) > maxCount
+        array.shift(mergedSeqArr)
+        array.shift(mergedStartArr)
+        array.shift(mergedEndArr)
+        array.shift(mergedHighArr)
+        array.shift(mergedLowArr)
+        array.shift(mergedHighBarArr)
+        array.shift(mergedLowBarArr)
+        array.shift(mergedOpenArr)
+        array.shift(mergedCloseArr)
+        array.shift(mergedDirArr)
+
+// 每次执行先清空瞬时事件；只有封口时才置 true。
+mergedSealedEvent := false
+
+bool processRawBar = barstate.isconfirmed and (na(lastProcessedRawBar) or bar_index != lastProcessedRawBar)
+
+if processRawBar
+    lastProcessedRawBar := bar_index
+
+    if na(activeHigh)
+        activeStartBar  := bar_index
+        activeEndBar    := bar_index
+        activeHigh      := high
+        activeLow       := low
+        activeHighBar   := bar_index
+        activeLowBar    := bar_index
+        activeOpen      := open
+        activeClose     := close
+        activeDirection := DIR_UNKNOWN
+        lastEvent       := "初始化 active merged bar"
     else
-        curr_std_seq += 1
-        array.push(std_H_arr,       curr_std_H)
-        array.push(std_L_arr,       curr_std_L)
-        array.push(std_H_bar_arr,   curr_std_H_bar)
-        array.push(std_L_bar_arr,   curr_std_L_bar)
-        array.push(std_end_bar_arr, curr_std_end_bar)
-        array.push(std_seq_arr,     curr_std_seq)
-        new_std_sealed := true
-        curr_std_H       := high
-        curr_std_L       := low
-        curr_std_H_bar   := bar_index
-        curr_std_L_bar   := bar_index
-        curr_std_end_bar := bar_index
+        bool hasContain = f_has_containment(activeHigh, activeLow, high, low)
 
-// ============================================================
-// ██  SECTION 2：顶底分型检测
-//
-// 需求 §12.1（宽松定义）：
-//   顶分型：mid.H > left.H AND mid.H > right.H
-//   底分型：mid.L < left.L AND mid.L < right.L
-//
-// 去重：last_checked_mid_seq 防止同一 mid 重复 push
-// ============================================================
+        if hasContain
+            int mergeDirection = lastResolvedDirection
+            if mergeDirection == DIR_UNKNOWN
+                mergeDirection := activeDirection
+            if mergeDirection == DIR_UNKNOWN
+                mergeDirection := f_bootstrap_direction(activeClose, activeHigh, activeLow, close, high, low)
+                bootstrapDirectionCount += 1
 
-var array<int>   frac_type_arr  = array.new<int>()
-var array<float> frac_price_arr = array.new<float>()
-var array<int>   frac_bar_arr   = array.new<int>()
-var array<int>   frac_seq_arr   = array.new<int>()
+            float oldHigh = activeHigh
+            float oldLow = activeLow
 
-var int last_checked_mid_seq = -1
-
-if new_std_sealed
-    int _sz = array.size(std_H_arr)
-    if _sz >= 3
-        int _mSq = array.get(std_seq_arr, _sz - 2)
-        if _mSq != last_checked_mid_seq
-            last_checked_mid_seq := _mSq
-            float _lH  = array.get(std_H_arr,     _sz - 3)
-            float _lL  = array.get(std_L_arr,     _sz - 3)
-            float _mH  = array.get(std_H_arr,     _sz - 2)
-            float _mL  = array.get(std_L_arr,     _sz - 2)
-            int   _mHb = array.get(std_H_bar_arr, _sz - 2)
-            int   _mLb = array.get(std_L_bar_arr, _sz - 2)
-            float _rH  = array.get(std_H_arr,     _sz - 1)
-            float _rL  = array.get(std_L_arr,     _sz - 1)
-            bool _is_top = _mH > _lH and _mH > _rH
-            bool _is_bot = _mL < _lL and _mL < _rL
-            if _is_top
-                array.push(frac_type_arr,  1)
-                array.push(frac_price_arr, _mH)
-                array.push(frac_bar_arr,   _mHb)
-                array.push(frac_seq_arr,   _mSq)
-            else if _is_bot
-                array.push(frac_type_arr,  -1)
-                array.push(frac_price_arr, _mL)
-                array.push(frac_bar_arr,   _mLb)
-                array.push(frac_seq_arr,   _mSq)
-
-// ============================================================
-// ██  SECTION 3：笔合成状态机
-//
-// 端点数组（bi_pts_*）与 confirmed_lines 严格同步：
-//   confirmed_lines.size() == bi_pts_type_arr.size() - 1
-//
-// ── f_bi_pop_tail() 设计 ────────────────────────────────────
-// 返回值：true = 成功弹出，false = 数组为空未操作
-//
-// 安全约束：
-//   1. 弹出前检查四个并行数组的 size 全部 > 0
-//   2. 若四个数组 size 不一致，强制截断到最小值再弹出（防御）
-//   3. 同步弹出 confirmed_lines：
-//      - 弹出端点后新 pts_size = old_pts - 1
-//      - 需要 lines_size = new_pts_size - 1 = old_pts - 2
-//      - 若 lines_size > old_pts - 2，则弹出并删除末尾一条
-//
-// ── 回退循环约束 ────────────────────────────────────────────
-// 每轮 while 循环内：
-//   1. 先弹末尾端点（B），检查返回值
-//   2. 弹出成功后，重新读 size，再弹倒数第二（A）
-//   3. 不盲目双 pop，避免在 size=1 时第二次 pop 空数组
-//
-// ── 同向替换约束 ────────────────────────────────────────────
-// 更新 confirmed line 终点，仅在 pts_sz >= 2 时才有意义：
-//   pts_sz == 1 时，末尾端点是起始候选，根本没有对应 confirmed line
-// ============================================================
-
-var array<int>   bi_pts_type_arr  = array.new<int>()
-var array<float> bi_pts_price_arr = array.new<float>()
-var array<int>   bi_pts_bar_arr   = array.new<int>()
-var array<int>   bi_pts_seq_arr   = array.new<int>()
-
-var array<line>  confirmed_lines  = array.new<line>()
-var line         pending_line     = na
-
-// ── 安全读末尾 ────────────────────────────────────────────
-f_tail_int(array<int> arr) =>
-    int _s = array.size(arr)
-    _s > 0 ? array.get(arr, _s - 1) : na
-
-f_tail_float(array<float> arr) =>
-    int _s = array.size(arr)
-    _s > 0 ? array.get(arr, _s - 1) : na
-
-f_second_last_int(array<int> arr) =>
-    int _s = array.size(arr)
-    _s >= 2 ? array.get(arr, _s - 2) : na
-
-f_second_last_float(array<float> arr) =>
-    int _s = array.size(arr)
-    _s >= 2 ? array.get(arr, _s - 2) : na
-
-// ── f_bi_pop_tail：安全弹出末尾端点，返回是否成功 ─────────
-f_bi_pop_tail() =>
-    // 读取四个并行数组的 size
-    int _s0 = array.size(bi_pts_type_arr)
-    int _s1 = array.size(bi_pts_price_arr)
-    int _s2 = array.size(bi_pts_bar_arr)
-    int _s3 = array.size(bi_pts_seq_arr)
-
-    // 四数组必须全部非空才能弹出
-    bool _can_pop = _s0 > 0 and _s1 > 0 and _s2 > 0 and _s3 > 0
-    if not _can_pop
-        false  // 空数组，不操作
-    else
-        // 防御：若四数组长度不一致，截断到最小公共长度
-        int _min_s = math.min(math.min(_s0, _s1), math.min(_s2, _s3))
-        // 截断超出最小长度的元素
-        int _excess0 = _s0 - _min_s
-        int _excess1 = _s1 - _min_s
-        int _excess2 = _s2 - _min_s
-        int _excess3 = _s3 - _min_s
-        int _e = 0
-        while _e < _excess0
-            array.pop(bi_pts_type_arr)
-            _e += 1
-        _e := 0
-        while _e < _excess1
-            array.pop(bi_pts_price_arr)
-            _e += 1
-        _e := 0
-        while _e < _excess2
-            array.pop(bi_pts_bar_arr)
-            _e += 1
-        _e := 0
-        while _e < _excess3
-            array.pop(bi_pts_seq_arr)
-            _e += 1
-
-        // 此时四数组长度均为 _min_s，再 pop 一个
-        int _old_pts = _min_s
-        array.pop(bi_pts_type_arr)
-        array.pop(bi_pts_price_arr)
-        array.pop(bi_pts_bar_arr)
-        array.pop(bi_pts_seq_arr)
-        // new_pts = _old_pts - 1，需要 lines = new_pts - 1 = _old_pts - 2
-        int _lines = array.size(confirmed_lines)
-        if _lines > _old_pts - 2
-            line _ln = array.pop(confirmed_lines)
-            if not na(_ln)
-                line.delete(_ln)
-        true  // 成功弹出
-
-// ── 创建 confirmed line 并推入 ───────────────────────────
-f_bi_push_line(int x1, float y1, int x2, float y2) =>
-    line _ln = line.new(x1, y1, x2, y2,
-         xloc   = xloc.bar_index,
-         extend = extend.none,
-         color  = bi_color,
-         style  = line.style_solid,
-         width  = bi_width)
-    array.push(confirmed_lines, _ln)
-
-// ── 笔合成主逻辑（global scope，last_frac_sz 门控）────────
-var int last_frac_sz = 0
-
-int _cur_frac_sz = array.size(frac_type_arr)
-
-if _cur_frac_sz > last_frac_sz
-    last_frac_sz := _cur_frac_sz
-
-    int   _nType  = array.get(frac_type_arr,  _cur_frac_sz - 1)
-    float _nPrice = array.get(frac_price_arr, _cur_frac_sz - 1)
-    int   _nBar   = array.get(frac_bar_arr,   _cur_frac_sz - 1)
-    int   _nSeq   = array.get(frac_seq_arr,   _cur_frac_sz - 1)
-
-    int _pts_sz = array.size(bi_pts_type_arr)
-
-    if _pts_sz == 0
-        // 无端点：加入第一个候选端点
-        array.push(bi_pts_type_arr,  _nType)
-        array.push(bi_pts_price_arr, _nPrice)
-        array.push(bi_pts_bar_arr,   _nBar)
-        array.push(bi_pts_seq_arr,   _nSeq)
-
-    else
-        int   _lastType  = f_tail_int  (bi_pts_type_arr)
-        float _lastPrice = f_tail_float(bi_pts_price_arr)
-        int   _lastSeq   = f_tail_int  (bi_pts_seq_arr)
-        int   _lastBar   = f_tail_int  (bi_pts_bar_arr)
-
-        if _nType == _lastType
-            // ── 同向：取更极端（需求 §13.2）────────────────
-            bool _rep_top = _nType == 1  and _nPrice > _lastPrice
-            bool _rep_bot = _nType == -1 and _nPrice < _lastPrice
-            bool _replace = _rep_top or _rep_bot
-            if _replace
-                int _sz = array.size(bi_pts_type_arr)
-                array.set(bi_pts_price_arr, _sz - 1, _nPrice)
-                array.set(bi_pts_bar_arr,   _sz - 1, _nBar)
-                array.set(bi_pts_seq_arr,   _sz - 1, _nSeq)
-                // 仅 pts_sz >= 2 时末尾才有对应 confirmed line（不变式）
-                // pts_sz == 1 时是起始候选端点，没有 confirmed line
-                if _pts_sz >= 2
-                    int _lsz = array.size(confirmed_lines)
-                    if _lsz > 0
-                        line _ln = array.get(confirmed_lines, _lsz - 1)
-                        if not na(_ln)
-                            line.set_x2(_ln, _nBar)
-                            line.set_y2(_ln, _nPrice)
-
-        else
-            // ── 异向：检查间隔（需求 §12.2）────────────────
-            int  _seq_diff   = _nSeq - _lastSeq
-            bool _far_enough = _seq_diff >= bi_min_span
-
-            if _far_enough
-                // 距离满足 → 确认新笔
-                f_bi_push_line(_lastBar, _lastPrice, _nBar, _nPrice)
-                array.push(bi_pts_type_arr,  _nType)
-                array.push(bi_pts_price_arr, _nPrice)
-                array.push(bi_pts_bar_arr,   _nBar)
-                array.push(bi_pts_seq_arr,   _nSeq)
-
+            if mergeDirection == DIR_UP
+                float newHigh = math.max(oldHigh, high)
+                float newLow = math.max(oldLow, low)
+                if newHigh > oldHigh
+                    activeHighBar := bar_index
+                if newLow > oldLow
+                    activeLowBar := bar_index
+                activeHigh := newHigh
+                activeLow := newLow
             else
-                // 距离不足 → 回退修正
-                // 场景：A顶→B底→C顶，C>A 且 B~A 距离不足
-                // 每轮先 pop B（末尾），成功后再检查 A（新末尾），再 pop A
-                // 不盲目双 pop：每次 pop 后重新读 size
-                int  _guard   = 0
-                bool _rolling = true
+                float newHigh = math.min(oldHigh, high)
+                float newLow = math.min(oldLow, low)
+                if newHigh < oldHigh
+                    activeHighBar := bar_index
+                if newLow < oldLow
+                    activeLowBar := bar_index
+                activeHigh := newHigh
+                activeLow := newLow
 
-                while _rolling and _guard < 20
-                    _guard += 1
-                    int _cur_pts = array.size(bi_pts_type_arr)
-                    if _cur_pts < 2
-                        // 少于 2 个端点，无法再回退
-                        _rolling := false
-                    else
-                        int   _penType  = f_second_last_int  (bi_pts_type_arr)
-                        float _penPrice = f_second_last_float(bi_pts_price_arr)
-                        bool _same_dir  = _nType == _penType
-                        bool _beats_top = _nType == 1  and _nPrice > _penPrice
-                        bool _beats_bot = _nType == -1 and _nPrice < _penPrice
-                        bool _need_rb   = _same_dir and (_beats_top or _beats_bot)
+            activeEndBar := bar_index
+            activeClose := close
+            activeDirection := mergeDirection
+            containMergeCount += 1
+            lastEvent := mergeDirection == DIR_UP ? "UP 包含合并" : "DOWN 包含合并"
+        else
+            bool movesUp = high > activeHigh and low > activeLow
+            bool movesDown = high < activeHigh and low < activeLow
+            int resolvedDirection = movesUp ? DIR_UP : movesDown ? DIR_DOWN : DIR_UNKNOWN
 
-                        if _need_rb
-                            // 先 pop 末尾（B）
-                            bool _popped_b = f_bi_pop_tail()
-                            if _popped_b
-                                // B 弹出成功，再检查新末尾（A）并 pop
-                                int _after_b = array.size(bi_pts_type_arr)
-                                if _after_b > 0
-                                    f_bi_pop_tail()
-                                // 若 after_b == 0 说明已清空，退出循环
-                                if _after_b == 0
-                                    _rolling := false
-                            else
-                                // pop 失败（数组已空），退出循环
-                                _rolling := false
-                        else
-                            _rolling := false
+            if resolvedDirection == DIR_UNKNOWN
+                invariantErrorCount += 1
+                lastEvent := "错误：非包含关系无确定方向"
+            else
+                // 封口 active；若它发生过包含合并，保存实际合并方向上下文。
+                int sealedDirectionContext = activeDirection == DIR_UNKNOWN ? resolvedDirection : activeDirection
+                array.push(mergedSeqArr, nextMergedSeq)
+                array.push(mergedStartArr, activeStartBar)
+                array.push(mergedEndArr, activeEndBar)
+                array.push(mergedHighArr, activeHigh)
+                array.push(mergedLowArr, activeLow)
+                array.push(mergedHighBarArr, activeHighBar)
+                array.push(mergedLowBarArr, activeLowBar)
+                array.push(mergedOpenArr, activeOpen)
+                array.push(mergedCloseArr, activeClose)
+                array.push(mergedDirArr, sealedDirectionContext)
 
-                // 回退结束，新分型 C 作为候选端点加入
-                array.push(bi_pts_type_arr,  _nType)
-                array.push(bi_pts_price_arr, _nPrice)
-                array.push(bi_pts_bar_arr,   _nBar)
-                array.push(bi_pts_seq_arr,   _nSeq)
+                nextMergedSeq += 1
+                lastResolvedDirection := resolvedDirection
+                nonContainSealCount += 1
+                mergedSealedEvent := true
+                lastEvent := resolvedDirection == DIR_UP ? "封口合成 K：方向 UP" : "封口合成 K：方向 DOWN"
 
-// ============================================================
-// ██  SECTION 4：Pending（tentative）笔管理
-//
-// 需求 §12.3 §13.5：最后一笔允许实时变动。
-// pending_line 单例复用，绝不进入 confirmed_lines。
-// ============================================================
+                // 当前 raw bar 成为新的 active merged bar。
+                activeStartBar  := bar_index
+                activeEndBar    := bar_index
+                activeHigh      := high
+                activeLow       := low
+                activeHighBar   := bar_index
+                activeLowBar    := bar_index
+                activeOpen      := open
+                activeClose     := close
+                activeDirection := resolvedDirection
 
-int  _bi_sz   = array.size(bi_pts_type_arr)
-bool _has_pts = _bi_sz > 0
+                f_trim_merged_history(maxStoredMerged)
 
-if not _has_pts or not show_bi_pend
-    if not na(pending_line)
-        line.delete(pending_line)
-        pending_line := na
-else
-    int   _ltp = f_tail_int  (bi_pts_type_arr)
-    float _lpp = f_tail_float(bi_pts_price_arr)
-    int   _lbp = f_tail_int  (bi_pts_bar_arr)
-
-    float _pp = _ltp == -1 ? high : low
-    int   _pb = bar_index
-
-    if na(pending_line)
-        pending_line := line.new(_lbp, _lpp, _pb, _pp,
-             xloc   = xloc.bar_index,
-             extend = extend.none,
-             color  = pend_color,
-             style  = line.style_dashed,
-             width  = pend_width)
-    else
-        line.set_x1(pending_line, _lbp)
-        line.set_y1(pending_line, _lpp)
-        line.set_x2(pending_line, _pb)
-        line.set_y2(pending_line, _pp)
+if not f_merged_arrays_equal()
+    invariantErrorCount += 1
+    lastEvent := "错误：merged 并行数组长度不一致"
 
 // ============================================================
-// ██  SECTION 5：可视化
+// SECTION 2 — detected fractal
+// 仅在 MERGED_SEALED 事件后检查最后三根 sealed merged bar。
 // ============================================================
 
-// ── 5A：顶底分型标记（▼▲）────────────────────────────────
-var int last_frac_labeled = -1
+var array<int> fractalIdArr       = array.new_int()
+var array<int> fractalTypeArr     = array.new_int()
+var array<float> fractalPriceArr  = array.new_float()
+var array<int> fractalRawBarArr   = array.new_int()
+var array<int> fractalSourceSeqArr = array.new_int()
+var array<int> fractalConfirmedSeqArr = array.new_int()
+var array<label> fractalLabelArr  = array.new<label>()
 
-int _fz = array.size(frac_type_arr)
-if _fz > 0 and show_frac_mark
-    int   _ft = array.get(frac_type_arr,  _fz - 1)
-    float _fp = array.get(frac_price_arr, _fz - 1)
-    int   _fb = array.get(frac_bar_arr,   _fz - 1)
-    if _fb != last_frac_labeled
-        last_frac_labeled := _fb
-        label.new(_fb, _fp,
-             text      = _ft == 1 ? "▼" : "▲",
-             xloc      = xloc.bar_index,
-             yloc      = yloc.price,
-             color     = color.new(color.white, 100),
-             textcolor = _ft == 1 ? color.red : color.green,
-             style     = _ft == 1 ? label.style_label_down : label.style_label_up,
-             size      = size.small)
+var int nextFractalId = 0
+var int lastCheckedMergedSeq = na
+var int topFractalCount = 0
+var int bottomFractalCount = 0
+var int dualFractalErrorCount = 0
 
-// ── 5B：笔端点标记（T/B）─────────────────────────────────
-var int last_bi_pt_labeled = -1
+f_fractal_arrays_equal() =>
+    int n = array.size(fractalIdArr)
+    bool equal = n == array.size(fractalTypeArr) and n == array.size(fractalPriceArr) and n == array.size(fractalRawBarArr)
+    equal := equal and n == array.size(fractalSourceSeqArr) and n == array.size(fractalConfirmedSeqArr)
+    equal
 
-int _bz = array.size(bi_pts_type_arr)
-if _bz > 0 and show_bi_endpt
-    int   _pt  = array.get(bi_pts_type_arr,  _bz - 1)
-    float _pp2 = array.get(bi_pts_price_arr, _bz - 1)
-    int   _pb  = array.get(bi_pts_bar_arr,   _bz - 1)
-    if _pb != last_bi_pt_labeled
-        last_bi_pt_labeled := _pb
-        label.new(_pb, _pp2,
-             text      = _pt == 1 ? "T" : "B",
-             xloc      = xloc.bar_index,
-             yloc      = yloc.price,
-             color     = color.new(color.blue, 30),
-             textcolor = color.white,
-             style     = _pt == 1 ? label.style_label_down : label.style_label_up,
-             size      = size.tiny)
+f_trim_fractal_history(int maxCount) =>
+    while array.size(fractalIdArr) > maxCount
+        array.shift(fractalIdArr)
+        array.shift(fractalTypeArr)
+        array.shift(fractalPriceArr)
+        array.shift(fractalRawBarArr)
+        array.shift(fractalSourceSeqArr)
+        array.shift(fractalConfirmedSeqArr)
 
-// ── 5C：标准化K线序号 Debug 标记 ─────────────────────────
-var int last_std_debug_bar = -1
+if mergedSealedEvent
+    int mergedCount = array.size(mergedSeqArr)
+    if mergedCount >= 3
+        int leftIndex = mergedCount - 3
+        int midIndex = mergedCount - 2
+        int rightIndex = mergedCount - 1
+        int midSeq = array.get(mergedSeqArr, midIndex)
 
-if new_std_sealed and show_std_debug
-    int _ssz = array.size(std_H_arr)
-    if _ssz > 0
-        int   _sEb = array.get(std_end_bar_arr, _ssz - 1)
-        float _sH  = array.get(std_H_arr,       _ssz - 1)
-        int   _sSq = array.get(std_seq_arr,     _ssz - 1)
-        if _sEb != last_std_debug_bar
-            last_std_debug_bar := _sEb
-            label.new(_sEb, _sH,
-                 text      = str.tostring(_sSq),
-                 xloc      = xloc.bar_index,
-                 yloc      = yloc.price,
-                 color     = color.new(color.gray, 80),
-                 textcolor = color.gray,
-                 style     = label.style_label_down,
-                 size      = size.tiny)
+        if na(lastCheckedMergedSeq) or midSeq != lastCheckedMergedSeq
+            lastCheckedMergedSeq := midSeq
 
-// ── 5D：确认笔显示开关 ───────────────────────────────────
-if barstate.islast and not show_bi_conf
-    int _clsz = array.size(confirmed_lines)
-    int _ci   = 0
-    while _ci < _clsz
-        line _cln = array.get(confirmed_lines, _ci)
-        if not na(_cln)
-            line.set_color(_cln, color.new(bi_color, 100))
-        _ci += 1
+            float leftHigh = array.get(mergedHighArr, leftIndex)
+            float leftLow = array.get(mergedLowArr, leftIndex)
+            float midHigh = array.get(mergedHighArr, midIndex)
+            float midLow = array.get(mergedLowArr, midIndex)
+            float rightHigh = array.get(mergedHighArr, rightIndex)
+            float rightLow = array.get(mergedLowArr, rightIndex)
 
-// ── 5E：Debug Panel ───────────────────────────────────────
-var table dbg_table = na
+            bool looseTop = midHigh > leftHigh and midHigh > rightHigh
+            bool looseBottom = midLow < leftLow and midLow < rightLow
+            bool strictTop = looseTop and midLow > leftLow and midLow > rightLow
+            bool strictBottom = looseBottom and midHigh < leftHigh and midHigh < rightHigh
+            bool isTop = isStrictMode ? strictTop : looseTop
+            bool isBottom = isStrictMode ? strictBottom : looseBottom
 
-if show_debug_panel
-    if na(dbg_table)
-        dbg_table := table.new(position.top_right, 2, 8,
-             bgcolor      = color.new(color.black, 70),
-             border_width = 1)
+            if isTop and isBottom
+                dualFractalErrorCount += 1
+                invariantErrorCount += 1
+                lastEvent := "错误：同一 merged bar 同时为顶底分型"
+            else if isTop or isBottom
+                int fractalType = isTop ? FRAC_TOP : FRAC_BOTTOM
+                float fractalPrice = isTop ? midHigh : midLow
+                int fractalRawBar = isTop ? array.get(mergedHighBarArr, midIndex) : array.get(mergedLowBarArr, midIndex)
+                int confirmedSeq = array.get(mergedSeqArr, rightIndex)
 
-    int _std_sz  = array.size(std_H_arr)
-    int _frac_sz = array.size(frac_type_arr)
-    int _bi_sz2  = array.size(bi_pts_type_arr)
-    int _conf_sz = array.size(confirmed_lines)
+                array.push(fractalIdArr, nextFractalId)
+                array.push(fractalTypeArr, fractalType)
+                array.push(fractalPriceArr, fractalPrice)
+                array.push(fractalRawBarArr, fractalRawBar)
+                array.push(fractalSourceSeqArr, midSeq)
+                array.push(fractalConfirmedSeqArr, confirmedSeq)
 
-    string _frac_str = _frac_sz == 0 ? "—" : (array.get(frac_type_arr, _frac_sz - 1) == 1 ? "顶" : "底") + " @" + str.tostring(array.get(frac_price_arr, _frac_sz - 1), "#.##") + " bar=" + str.tostring(array.get(frac_bar_arr, _frac_sz - 1))
-    string _bi_str   = _bi_sz2  == 0 ? "—" : (array.get(bi_pts_type_arr, _bi_sz2 - 1) == 1 ? "顶端" : "底端") + " @" + str.tostring(array.get(bi_pts_price_arr, _bi_sz2 - 1), "#.##") + " bar=" + str.tostring(array.get(bi_pts_bar_arr, _bi_sz2 - 1))
-    string _pend_str = _bi_sz2  == 0 ? "—" : (array.get(bi_pts_type_arr, _bi_sz2 - 1) == -1 ? "↑向上" : "↓向下") + " from " + str.tostring(array.get(bi_pts_price_arr, _bi_sz2 - 1), "#.##")
+                if fractalType == FRAC_TOP
+                    topFractalCount += 1
+                else
+                    bottomFractalCount += 1
 
-    table.cell(dbg_table, 0, 0, "字段",        text_color=color.yellow, text_size=size.small)
-    table.cell(dbg_table, 1, 0, "值",          text_color=color.yellow, text_size=size.small)
-    table.cell(dbg_table, 0, 1, "合成K线数",   text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 1, 1, str.tostring(_std_sz),  text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 0, 2, "分型总数",    text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 1, 2, str.tostring(_frac_sz), text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 0, 3, "笔端点数",    text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 1, 3, str.tostring(_bi_sz2),  text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 0, 4, "已确认笔数",  text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 1, 4, str.tostring(_conf_sz), text_color=color.white,  text_size=size.small)
-    table.cell(dbg_table, 0, 5, "最新分型",    text_color=color.new(#00BFFF, 0), text_size=size.small)
-    table.cell(dbg_table, 1, 5, _frac_str,     text_color=color.new(#00BFFF, 0), text_size=size.small)
-    table.cell(dbg_table, 0, 6, "最新笔端",    text_color=color.new(#00FF7F, 0), text_size=size.small)
-    table.cell(dbg_table, 1, 6, _bi_str,        text_color=color.new(#00FF7F, 0), text_size=size.small)
-    table.cell(dbg_table, 0, 7, "Pending方向", text_color=color.orange, text_size=size.small)
-    table.cell(dbg_table, 1, 7, _pend_str,      text_color=color.orange, text_size=size.small)
+                if showFractals
+                    string markerText = fractalType == FRAC_TOP ? "顶" : "底"
+                    color markerColor = fractalType == FRAC_TOP ? topColor : bottomColor
+                    label marker = label.new(fractalRawBar, fractalPrice, markerText,
+                         xloc=xloc.bar_index, yloc=yloc.price,
+                         style=fractalType == FRAC_TOP ? label.style_label_down : label.style_label_up,
+                         color=markerColor, textcolor=color.white, size=size.tiny)
+                    array.push(fractalLabelArr, marker)
+                    while array.size(fractalLabelArr) > maxVisibleFractal
+                        label oldest = array.shift(fractalLabelArr)
+                        label.delete(oldest)
+
+                nextFractalId += 1
+                lastEvent := fractalType == FRAC_TOP ? "确认 detected TOP" : "确认 detected BOTTOM"
+                f_trim_fractal_history(maxStoredFractal)
+
+if not f_fractal_arrays_equal()
+    invariantErrorCount += 1
+    lastEvent := "错误：fractal 并行数组长度不一致"
 
 // ============================================================
-// 文件结束
+// SECTION 3 — 单例诊断面板
+// ============================================================
+
+var table debugTable = na
+
+if showDebugPanel
+    if na(debugTable)
+        debugTable := table.new(position.top_right, 2, 15,
+             bgcolor=color.new(color.black, 72), border_width=1)
+
+    int sealedCount = array.size(mergedSeqArr)
+    int storedFractalCount = array.size(fractalIdArr)
+    string directionText = lastResolvedDirection == DIR_UP ? "UP" : lastResolvedDirection == DIR_DOWN ? "DOWN" : "UNKNOWN"
+    string activeRange = na(activeHigh) ? "—" : str.tostring(activeLow, format.mintick) + " ~ " + str.tostring(activeHigh, format.mintick)
+    string invariantText = invariantErrorCount == 0 ? "OK" : "ERROR × " + str.tostring(invariantErrorCount)
+    color invariantColor = invariantErrorCount == 0 ? color.lime : color.red
+    string tfText = isPrimaryDailyTf ? "日 K（目标周期）" : timeframe.period + "（非主要验收周期）"
+    color tfColor = isPrimaryDailyTf ? color.lime : color.orange
+    string maRegimeText = na(fastTrendMa) or na(slowTrendMa) ? "数据不足" : fastTrendMa > slowTrendMa ? "BULL：快线 > 慢线" : fastTrendMa < slowTrendMa ? "BEAR：快线 < 慢线" : "NEUTRAL"
+    color maRegimeColor = na(fastTrendMa) or na(slowTrendMa) ? color.gray : fastTrendMa > slowTrendMa ? color.lime : fastTrendMa < slowTrendMa ? color.red : color.yellow
+    string fastMaText = na(fastTrendMa) ? "—" : str.tostring(fastTrendMa, format.mintick)
+    string slowMaText = na(slowTrendMa) ? "—" : str.tostring(slowTrendMa, format.mintick)
+
+    table.cell(debugTable, 0, 0, "Chanlun Phase 1", text_color=color.yellow)
+    table.cell(debugTable, 1, 0, fractalMode, text_color=color.yellow)
+    table.cell(debugTable, 0, 1, "图表周期", text_color=color.white)
+    table.cell(debugTable, 1, 1, tfText, text_color=tfColor)
+    table.cell(debugTable, 0, 2, "均线状态", text_color=color.white)
+    table.cell(debugTable, 1, 2, maRegimeText, text_color=maRegimeColor)
+    table.cell(debugTable, 0, 3, "快线 SMA " + str.tostring(fastMaLength), text_color=fastMaColor)
+    table.cell(debugTable, 1, 3, fastMaText, text_color=fastMaColor)
+    table.cell(debugTable, 0, 4, "慢线 SMA " + str.tostring(slowMaLength), text_color=slowMaColor)
+    table.cell(debugTable, 1, 4, slowMaText, text_color=slowMaColor)
+    table.cell(debugTable, 0, 5, "sealed merged", text_color=color.white)
+    table.cell(debugTable, 1, 5, str.tostring(sealedCount), text_color=color.white)
+    table.cell(debugTable, 0, 6, "active 区间", text_color=color.white)
+    table.cell(debugTable, 1, 6, activeRange, text_color=color.aqua)
+    table.cell(debugTable, 0, 7, "已解析方向", text_color=color.white)
+    table.cell(debugTable, 1, 7, directionText, text_color=color.aqua)
+    table.cell(debugTable, 0, 8, "包含合并", text_color=color.white)
+    table.cell(debugTable, 1, 8, str.tostring(containMergeCount), text_color=color.white)
+    table.cell(debugTable, 0, 9, "封口事件", text_color=color.white)
+    table.cell(debugTable, 1, 9, str.tostring(nonContainSealCount), text_color=color.white)
+    table.cell(debugTable, 0, 10, "保存分型", text_color=color.white)
+    table.cell(debugTable, 1, 10, str.tostring(storedFractalCount), text_color=color.white)
+    table.cell(debugTable, 0, 11, "顶 / 底总数", text_color=color.white)
+    table.cell(debugTable, 1, 11, str.tostring(topFractalCount) + " / " + str.tostring(bottomFractalCount), text_color=color.white)
+    table.cell(debugTable, 0, 12, "Bootstrap 次数", text_color=color.white)
+    table.cell(debugTable, 1, 12, str.tostring(bootstrapDirectionCount), text_color=color.white)
+    table.cell(debugTable, 0, 13, "不变量", text_color=color.white)
+    table.cell(debugTable, 1, 13, invariantText, text_color=invariantColor)
+    table.cell(debugTable, 0, 14, "最新事件", text_color=color.white)
+    table.cell(debugTable, 1, 14, lastEvent, text_color=color.silver)
+else if not na(debugTable)
+    table.delete(debugTable)
+    debugTable := na
+
+// ============================================================
+// 文件结束 — Phase 1 不包含任何笔、线段或中枢逻辑。
 // ============================================================
