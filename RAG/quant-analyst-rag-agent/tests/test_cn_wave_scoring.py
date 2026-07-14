@@ -32,14 +32,13 @@ def _complete_row() -> pd.Series:
 def test_complete_positive_row_reaches_confirmed_stage() -> None:
     result = score_row(_complete_row())
 
-    assert result["leader_score"] == 18
+    assert result["leader_score"] == 13
     assert result["score_coverage"] == 1.0
     assert result["stage_label"] == "confirmed_main_uptrend"
 
 
 def test_exhaustion_overrides_high_positive_score() -> None:
     row = _complete_row()
-    row["narrative_conflict_flag"] = True
     row["high_volume_stall_flag"] = True
     row["upper_shadow_ratio"] = 0.10
     row["return_20d"] = 0.60
@@ -48,16 +47,28 @@ def test_exhaustion_overrides_high_positive_score() -> None:
 
     assert result["stage_label"] == "exhaustion_risk"
     assert result["exhaustion_component"] == -3
-    assert "narrative_conflict" in result["risk_flags"]
+    assert "high_volume_stall" in result["risk_flags"]
 
 
-def test_missing_evidence_is_not_treated_as_zero() -> None:
+def test_narrative_fields_do_not_change_market_behavior_score() -> None:
+    row = _complete_row()
+    baseline = score_row(row)
+    row["theme_score"] = 0
+    row["company_relevance"] = "contradicted"
+    row["narrative_conflict_flag"] = True
+    row["fundamental_score"] = 0
+
+    result = score_row(row)
+
+    assert result["leader_score"] == baseline["leader_score"]
+    assert result["stage_label"] == baseline["stage_label"]
+
+
+def test_missing_market_evidence_is_not_treated_as_zero() -> None:
     row = _complete_row()
     for field in (
-        "theme_score",
-        "company_relevance",
-        "narrative_conflict_flag",
-        "fundamental_score",
+        "rolling_high_120d",
+        "rolling_high_250d",
         "amount_rank_market",
         "rs_industry_20d",
         "rs_rank_market_20d",
@@ -68,4 +79,4 @@ def test_missing_evidence_is_not_treated_as_zero() -> None:
 
     assert result["score_coverage"] < 0.65
     assert result["stage_label"] == "insufficient_evidence"
-    assert "theme_score" in result["missing_components"]
+    assert "rolling_high_120d" in result["missing_components"]

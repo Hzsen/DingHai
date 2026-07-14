@@ -5,8 +5,8 @@ import math
 import pandas as pd
 
 
-SCORE_VERSION = "cn-wave-rule-baseline-v0.1.0"
-TOTAL_RULES = 15
+SCORE_VERSION = "cn-wave-market-behavior-v0.2.0"
+TOTAL_RULES = 11
 
 
 def _known(value: object) -> bool:
@@ -21,8 +21,6 @@ def score_row(row: pd.Series) -> dict[str, object]:
     score = 0
     evaluated = 0
     components = {
-        "theme_component": 0,
-        "fundamental_component": 0,
         "price_breakout_component": 0,
         "volume_component": 0,
         "relative_strength_component": 0,
@@ -41,20 +39,6 @@ def score_row(row: pd.Series) -> dict[str, object]:
             return True
         missing.append(field)
         return False
-
-    if evaluate("theme_score") and float(row["theme_score"]) >= 2:
-        components["theme_component"] += 2
-        reasons.append("strong_theme")
-    if evaluate("company_relevance") and row["company_relevance"] == "direct":
-        components["theme_component"] += 1
-        reasons.append("direct_company_relevance")
-    if evaluate("narrative_conflict_flag") and _truthy(row["narrative_conflict_flag"]):
-        components["theme_component"] -= 1
-        risks.append("narrative_conflict")
-
-    if evaluate("fundamental_score") and float(row["fundamental_score"]) >= 2:
-        components["fundamental_component"] += 2
-        reasons.append("fundamental_support")
 
     if evaluate("rolling_high_120d") and float(row["close"]) >= float(row["rolling_high_120d"]) * 0.98:
         components["price_breakout_component"] += 2
@@ -109,12 +93,12 @@ def score_row(row: pd.Series) -> dict[str, object]:
         stage = "exhaustion_risk"
     elif coverage < 0.65:
         stage = "insufficient_evidence"
-    elif score >= 12:
-        stage = "confirmed_main_uptrend"
     elif score >= 9:
+        stage = "confirmed_main_uptrend"
+    elif score >= 7:
         stage = "breakout_candidate"
-    elif score >= 6:
-        stage = "theme_strength_only"
+    elif score >= 4:
+        stage = "momentum_setup"
     else:
         stage = "normal"
 

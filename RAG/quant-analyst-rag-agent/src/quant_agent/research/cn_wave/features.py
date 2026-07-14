@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-FEATURE_VERSION = "cn-wave-features-v0.1.0"
+FEATURE_VERSION = "cn-wave-features-v0.4.0"
 REQUIRED_MARKET_COLUMNS = {
     "date",
     "ticker",
@@ -161,6 +161,7 @@ def _attach_narratives(features: pd.DataFrame, narratives: pd.DataFrame) -> pd.D
     )
 
     optional_columns = {
+        "event_type",
         "theme_type",
         "evidence_strength",
         "narrative_freshness",
@@ -169,10 +170,18 @@ def _attach_narratives(features: pd.DataFrame, narratives: pd.DataFrame) -> pd.D
     for column in optional_columns - set(narratives.columns):
         narratives[column] = pd.NA
 
+    # Abnormal-movement announcements are reactive disclosures triggered by price
+    # action. Joining them into signal features would recycle an already observed
+    # move as textual evidence, so they remain in the source table for audit only.
+    excluded_event = narratives["event_type"].astype("string").str.contains("交易异常波动", na=False)
+    excluded_title = narratives["source_title"].astype("string").str.contains("交易异常波动", na=False)
+    narratives = narratives.loc[~(excluded_event | excluded_title)].copy()
+
     event_columns = [
         "event_id",
         "published_at",
         "available_at",
+        "event_type",
         "theme_name",
         "theme_type",
         "catalyst_type",
@@ -211,13 +220,33 @@ def _attach_narratives(features: pd.DataFrame, narratives: pd.DataFrame) -> pd.D
 
 
 def _attach_labels(features: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame:
-    _require_columns(labels, {"ticker", "start_date", "end_date", "leader_type", "theme"}, "labels")
+    _require_columns(
+        labels,
+        {"ticker", "start_date", "end_date", "leader_type", "theme", "target_label"},
+        "labels",
+    )
     labels = labels.copy()
     labels["start_date"] = _datetime_ns(labels["start_date"])
     labels["end_date"] = _datetime_ns(labels["end_date"])
+    labels["target_label"] = pd.to_numeric(labels["target_label"], errors="raise").astype(int)
+    for optional_column in ("label_status", "negative_reason_tags"):
+        if optional_column not in labels.columns:
+            labels[optional_column] = pd.NA
+    invalid_targets = ~labels["target_label"].isin([0, 1])
+    if invalid_targets.any():
+        raise ValueError("labels.target_label must contain only 0 (negative) or 1 (positive)")
+    invalid_ranges = labels["start_date"] > labels["end_date"]
+    if invalid_ranges.any():
+        raise ValueError("labels contains a start_date after end_date")
+
+    features["is_labeled"] = False
+    features["target_label"] = pd.Series(pd.NA, index=features.index, dtype="Int64")
     features["is_labeled_positive"] = False
+    features["is_labeled_negative"] = False
     features["label_leader_type"] = pd.Series(pd.NA, index=features.index, dtype="object")
     features["label_theme"] = pd.Series(pd.NA, index=features.index, dtype="object")
+    features["label_status"] = pd.Series(pd.NA, index=features.index, dtype="object")
+    features["negative_reason_tags"] = pd.Series(pd.NA, index=features.index, dtype="object")
 
     for label in labels.itertuples(index=False):
         mask = (
@@ -225,11 +254,16 @@ def _attach_labels(features: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame
             & (features["date"] >= label.start_date)
             & (features["date"] <= label.end_date)
         )
-        if features.loc[mask, "is_labeled_positive"].any():
-            raise ValueError(f"Overlapping leader labels detected for {label.ticker}")
-        features.loc[mask, "is_labeled_positive"] = True
+        if features.loc[mask, "is_labeled"].any():
+            raise ValueError(f"Overlapping research labels detected for {label.ticker}")
+        features.loc[mask, "is_labeled"] = True
+        features.loc[mask, "target_label"] = label.target_label
+        features.loc[mask, "is_labeled_positive"] = label.target_label == 1
+        features.loc[mask, "is_labeled_negative"] = label.target_label == 0
         features.loc[mask, "label_leader_type"] = label.leader_type
         features.loc[mask, "label_theme"] = label.theme
+        features.loc[mask, "label_status"] = label.label_status
+        features.loc[mask, "negative_reason_tags"] = label.negative_reason_tags
     return features
 
 
@@ -254,7 +288,6 @@ def _add_coverage_metadata(features: pd.DataFrame) -> pd.DataFrame:
         "market_relative": ["rs_market_20d"],
         "chip_proxy": ["chip_concentration_60d", "overhead_supply_ratio"],
         "market_cross_section": ["amount_rank_market", "rs_rank_market_20d"],
-        "narrative": ["theme_score", "fundamental_score"],
     }
 
     def summarize(row: pd.Series) -> tuple[float, str]:

@@ -40,14 +40,17 @@ def main() -> None:
     features = build_daily_features(prices, benchmark, narratives, labels)
     features.to_parquet(paths.phase0_features_path, index=False)
     scored = score_daily_features(features)
-    phase0 = scored.loc[scored["is_labeled_positive"]].copy()
+    phase0 = scored.loc[scored["is_labeled"]].copy()
 
     result_columns = [
         "date",
         "ticker",
         "stock_name",
+        "target_label",
         "label_leader_type",
         "label_theme",
+        "label_status",
+        "negative_reason_tags",
         "leader_score",
         "stage_label",
         "score_coverage",
@@ -66,6 +69,8 @@ def main() -> None:
         "market_rows": len(prices),
         "feature_rows": len(features),
         "labeled_result_rows": len(phase0),
+        "positive_result_rows": int(phase0["target_label"].eq(1).sum()),
+        "negative_result_rows": int(phase0["target_label"].eq(0).sum()),
         "tickers": sorted(prices["ticker"].unique().tolist()),
         "feature_date_min": str(features["date"].min().date()),
         "feature_date_max": str(features["date"].max().date()),

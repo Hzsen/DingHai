@@ -58,6 +58,7 @@ def test_features_respect_narrative_available_at_and_missing_cross_section() -> 
                 "end_date": dates.iloc[270],
                 "leader_type": "institutional_trend",
                 "theme": "CPO_AI_optical_module",
+                "target_label": 1,
             }
         ]
     )
@@ -72,6 +73,7 @@ def test_features_respect_narrative_available_at_and_missing_cross_section() -> 
     assert pd.notna(features.iloc[249]["rolling_high_250d"])
     assert pd.notna(features.iloc[59]["chip_concentration_60d"])
     assert features["is_labeled_positive"].sum() == 11
+    assert features["is_labeled_negative"].sum() == 0
 
 
 def test_cross_section_rank_requires_minimum_universe() -> None:
@@ -99,7 +101,18 @@ def test_cross_section_rank_requires_minimum_universe() -> None:
         ]
     )
     labels = pd.DataFrame(
-        [{"ticker": "300308.SZ", "start_date": event_date, "end_date": event_date, "leader_type": "test", "theme": "test"}]
+        [
+            {
+                "ticker": "300308.SZ",
+                "start_date": event_date,
+                "end_date": event_date,
+                "leader_type": "test",
+                "theme": "test",
+                "target_label": 0,
+                "label_status": "negative_research_seed",
+                "negative_reason_tags": "pending_evidence",
+            }
+        ]
     )
 
     features = build_daily_features(
@@ -111,3 +124,50 @@ def test_cross_section_rank_requires_minimum_universe() -> None:
     )
 
     assert features["amount_rank_market"].eq(1).all()
+    assert features["is_labeled_negative"].sum() == 1
+    assert features.loc[features["is_labeled"], "target_label"].iloc[0] == 0
+    assert features.loc[features["is_labeled"], "negative_reason_tags"].iloc[0] == "pending_evidence"
+
+
+def test_abnormal_movement_announcement_is_excluded_from_features() -> None:
+    market = _market_fixture()
+    benchmark = pd.DataFrame({"date": market["date"], "close": market["close"] * 5})
+    event_date = market["date"].iloc[250]
+    narratives = pd.DataFrame(
+        [
+            {
+                "event_id": "reactive-event",
+                "published_at": event_date,
+                "available_at": event_date,
+                "ticker": "300308.SZ",
+                "event_type": "股票交易异常波动公告",
+                "theme_name": "测试题材",
+                "catalyst_type": "异动解释",
+                "source_type": "company_disclosure",
+                "source_title": "股票交易异常波动公告",
+                "source_url": "https://example.com/reactive",
+                "company_relevance": "direct",
+                "theme_score": 3,
+                "fundamental_score": 3,
+                "narrative_conflict_flag": False,
+                "risk_note": "",
+            }
+        ]
+    )
+    labels = pd.DataFrame(
+        [
+            {
+                "ticker": "300308.SZ",
+                "start_date": event_date,
+                "end_date": event_date,
+                "leader_type": "test",
+                "theme": "test",
+                "target_label": 1,
+            }
+        ]
+    )
+
+    features = build_daily_features(market, benchmark, narratives, labels)
+
+    assert features["event_id"].isna().all()
+    assert features["theme_score"].isna().all()
