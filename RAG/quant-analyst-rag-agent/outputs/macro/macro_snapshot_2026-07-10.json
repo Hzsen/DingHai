@@ -1,0 +1,931 @@
+{
+  "snapshot": {
+    "snapshot_id": "macro/2026-07-10/0f123a98b233",
+    "as_of": "2026-07-10T20:00:00+00:00",
+    "valid_until": "2026-07-11T20:00:00+00:00",
+    "primary_regime": "LONG_DURATION_PRESSURE",
+    "risk_state": "NORMAL",
+    "risk_score": 32.35117217589336,
+    "liquidity_state": "CONTRACTING",
+    "liquidity_score": -41.67838842560032,
+    "inflation_quadrant": "MIXED_INFLATION_PRESSURE",
+    "rate_pressure_state": "EXTREME_PRESSURE",
+    "rate_pressure_score": 95.0,
+    "asset_stances": [
+      {
+        "asset_id": "SPX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -36.73748965286098,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "SPY_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -58.12072693511355,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "QQQ_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -34.033364775219,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IWM_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -39.74296902802479,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IEF_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -53.32693537614209,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "TLT_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -27.579429533761267,
+        "confidence": 1,
+        "supporting_factors": [
+          "DOLLAR_WEAKER"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -40.678182229581346,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "SPY_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "SWING_1_4W",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -70.20182290096788,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "QQQ_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -58.148948181101034,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IWM_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "IWM_SPY_WEAKENING",
+          "KRE_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -46.58019474937068,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IEF_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -64.38441672761203,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "TLT_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -58.8966637048088,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "GLD_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -38.055403395406536,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "SPY_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "REGIME_1_3M",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -64.29842148359461,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "QQQ_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -44.20157979660367,
+        "confidence": 1,
+        "supporting_factors": [
+          "IWM_DELTA_20D_POSITIVE"
+        ],
+        "opposing_factors": [
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "IWM_SPY_WEAKENING",
+          "KRE_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -53.301042160566006,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IEF_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -77.77976556482133,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "TLT_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "REGIME_1_3M",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -75.44675188461396,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "GLD_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      }
+    ],
+    "main_drivers": [
+      "10Y_REAL_YIELD_HIGH_PERCENTILE",
+      "10Y_REAL_YIELD_RISING_5D",
+      "10Y_REAL_YIELD_RISING_20D",
+      "REAL_YIELD_CHANGE_STATISTICALLY_LARGE",
+      "10Y_NOMINAL_RISING",
+      "LONG_END_TERM_PRESSURE",
+      "GOLD_WEAKNESS_CONFIRMS_REAL_RATE_PRESSURE",
+      "SMALL_CAP_TRANSMISSION_WEAK",
+      "BANK_TRANSMISSION_WEAK"
+    ],
+    "confirming_signals": [
+      "CREDIT_SPREAD_CONTAINED"
+    ],
+    "conflicting_signals": [
+      "CREDIT_SPREAD_CONTAINED",
+      "DOLLAR_STRENGTH_TIGHTENS"
+    ],
+    "quality_flags": [
+      "ASYNCHRONOUS_RATE_DECOMPOSITION"
+    ],
+    "data_coverage": 1.0,
+    "confidence": 1,
+    "stale_series": [],
+    "model_version": "macro-regime-v1.0.0"
+  },
+  "document": {
+    "document_id": "macro-risk/2026-07-10",
+    "as_of": "2026-07-10T20:00:00+00:00",
+    "valid_from": "2026-07-10T20:00:00+00:00",
+    "valid_until": "2026-07-11T20:00:00+00:00",
+    "status": "FINALIZED_DAILY",
+    "primary_regime": "LONG_DURATION_PRESSURE",
+    "risk_state": "NORMAL",
+    "liquidity_state": "CONTRACTING",
+    "inflation_quadrant": "MIXED_INFLATION_PRESSURE",
+    "rate_pressure_state": "EXTREME_PRESSURE",
+    "asset_stances": [
+      {
+        "asset_id": "SPX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -36.73748965286098,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "SPY_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -58.12072693511355,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "QQQ_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -34.033364775219,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IWM_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -39.74296902802479,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IEF_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -53.32693537614209,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "TLT_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "BEARISH",
+        "direction_score": -27.579429533761267,
+        "confidence": 1,
+        "supporting_factors": [
+          "DOLLAR_WEAKER"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_1D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -40.678182229581346,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "SPY_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "SWING_1_4W",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -70.20182290096788,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "QQQ_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -58.148948181101034,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IWM_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "IWM_SPY_WEAKENING",
+          "KRE_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -46.58019474937068,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IEF_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -64.38441672761203,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "TLT_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -58.8966637048088,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "GLD_DELTA_5D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -38.055403395406536,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "SPY_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "REGIME_1_3M",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -64.29842148359461,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "QQQ_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -44.20157979660367,
+        "confidence": 1,
+        "supporting_factors": [
+          "IWM_DELTA_20D_POSITIVE"
+        ],
+        "opposing_factors": [
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "IWM_SPY_WEAKENING",
+          "KRE_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -53.301042160566006,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "IEF_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -77.77976556482133,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "TLT_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "YIELDS_UP_IS_BOND_PRICE_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "REGIME_1_3M",
+        "stance": "STRONGLY_BEARISH",
+        "direction_score": -75.44675188461396,
+        "confidence": 1,
+        "supporting_factors": [],
+        "opposing_factors": [
+          "GLD_DELTA_20D_NEGATIVE",
+          "LIQUIDITY_CONTRACTING",
+          "REAL_RATE_PRESSURE_HIGH",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-10T20:00:00+00:00",
+        "valid_until": "2026-07-11T20:00:00+00:00"
+      }
+    ],
+    "main_drivers": [
+      "10Y_REAL_YIELD_HIGH_PERCENTILE",
+      "10Y_REAL_YIELD_RISING_5D",
+      "10Y_REAL_YIELD_RISING_20D",
+      "REAL_YIELD_CHANGE_STATISTICALLY_LARGE",
+      "10Y_NOMINAL_RISING",
+      "LONG_END_TERM_PRESSURE",
+      "GOLD_WEAKNESS_CONFIRMS_REAL_RATE_PRESSURE",
+      "SMALL_CAP_TRANSMISSION_WEAK",
+      "BANK_TRANSMISSION_WEAK"
+    ],
+    "confirming_signals": [
+      "CREDIT_SPREAD_CONTAINED"
+    ],
+    "conflicting_signals": [
+      "CREDIT_SPREAD_CONTAINED",
+      "DOLLAR_STRENGTH_TIGHTENS"
+    ],
+    "risk_triggers": [
+      "CREDIT_SPREAD_WIDENING",
+      "VIX_BACKWARDATION",
+      "MOVE_SPIKE"
+    ],
+    "invalidation_conditions": [
+      "REGIME_STATE_CHANGES",
+      "DOCUMENT_EXPIRES",
+      "DATA_QUALITY_DEGRADES"
+    ],
+    "data_coverage": 1.0,
+    "confidence": 1,
+    "stale_series": [],
+    "source_observation_ids": [
+      "BAMLC0A0CM/2026-07-10T20:00:00+00:00",
+      "DFII10/2026-07-10T20:00:00+00:00",
+      "DGS10/2026-07-10T20:00:00+00:00",
+      "DGS2/2026-07-10T20:00:00+00:00",
+      "DGS30/2026-07-10T20:00:00+00:00",
+      "DXY/2026-07-10T20:00:00+00:00",
+      "GLD/2026-07-10T20:00:00+00:00",
+      "IEF/2026-07-10T20:00:00+00:00",
+      "IWM/2026-07-10T20:00:00+00:00",
+      "IWM_SPY/2026-07-10T20:00:00+00:00",
+      "KRE_SPY/2026-07-10T20:00:00+00:00",
+      "MOVE/2026-07-10T20:00:00+00:00",
+      "QQQ/2026-07-10T20:00:00+00:00",
+      "RRPONTSYD/2026-07-10T20:00:00+00:00",
+      "SOXX_QQQ/2026-07-10T20:00:00+00:00",
+      "SPY/2026-07-10T20:00:00+00:00",
+      "T10YIE/2026-07-10T20:00:00+00:00",
+      "TLT/2026-07-10T20:00:00+00:00",
+      "VIX/2026-07-10T20:00:00+00:00",
+      "VIX3M/2026-07-10T20:00:00+00:00",
+      "WALCL/2026-07-10T20:00:00+00:00",
+      "WTREGEN/2026-07-10T20:00:00+00:00"
+    ],
+    "created_at": "2026-07-10T20:00:00+00:00",
+    "updated_at": "2026-07-10T20:00:00+00:00",
+    "metadata": {
+      "model_version": "macro-regime-v1.0.0",
+      "snapshot_id": "macro/2026-07-10/0f123a98b233"
+    }
+  }
+}

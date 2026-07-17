@@ -1,0 +1,26 @@
+{
+  "viewpoint_id": "mv/private-demo/treasury-supply",
+  "title": "Treasury supply and duration absorption",
+  "topic": "FISCAL_OR_TREASURY_SUPPLY",
+  "claim": "Long-end rate pressure may be dominated by financing supply and weak duration absorption rather than a renewed inflation impulse.",
+  "horizon": "2W_3M",
+  "evidence_summary": [
+    "Term-premium pressure is the proposed transmission channel.",
+    "Duration absorption should be checked against real yields and the dollar."
+  ],
+  "market_implications": [
+    "TREASURY_20Y_PLUS_REJECTION",
+    "SELECTIVE_EQUITY_LIQUIDITY"
+  ],
+  "invalidation_conditions": [
+    "Long-duration Treasury absorption improves while real yields and the dollar weaken together."
+  ],
+  "confidence": 0.62,
+  "source_disclosure": "licensed material, locally abstracted",
+  "verbatim_text_included": false,
+  "status": "APPROVED",
+  "approved_for_external": true,
+  "as_of": "2026-07-15T20:00:00+00:00",
+  "created_at": "2026-07-15T20:10:00+00:00",
+  "updated_at": "2026-07-15T20:10:00+00:00"
+}

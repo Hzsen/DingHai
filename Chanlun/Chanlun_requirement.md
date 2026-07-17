@@ -1,8 +1,8 @@
-# TradingView 自动画缠论结构 Pine 脚本需求规格 v0.2
+# TradingView 自动画缠论结构 Pine 脚本需求规格 v0.3
 
 > 文档状态：工程实现基线（Normative Baseline）
 >
-> v0.2 新增的第 14–21 节属于规范性约束。若第 0–13 节中的早期描述、示例或建议与第 14–21 节冲突，以第 14–21 节为准。任何实现若有意偏离规范，必须在代码注释和阶段交付说明中列出偏离项，不得静默改变算法。
+> v0.2 新增的第 14–21 节属于规范性约束；v0.3 新增第 22 节。若早期描述与后续章节冲突，以编号更后的章节为准。任何实现若有意偏离规范，必须在代码注释和阶段交付说明中列出偏离项，不得静默改变算法。
 
 ## 0. 目标
 
@@ -1462,3 +1462,120 @@ Phase 2 未通过前禁止实现 segment 和 center。
 * 对象数量不超过配置预算；
 * debug 关闭不改变结构数量和坐标；
 * 未实现模块没有占位结果冒充 confirmed 输出。
+
+---
+
+## 22. 快速反转桥接与小转大代理 v1
+
+### 22.1 目的与边界
+
+第 17.4 节的普通 Level Selector 会直接忽略未同时满足跨度和 ATR 门槛的反向 detected fractal。在高波动趋势末端，可能出现：
+
+```text
+T1 -> B1 -> T2
+```
+
+或：
+
+```text
+B1 -> T1 -> B2
+```
+
+中间反向点因运动过快而跨度不足，随后同型端点又覆盖旧 tentative，导致一组肉眼明确的快速 V/N 型日线转折整体消失。
+
+Phase 1D 增加 `FAST_REVERSAL_BRIDGE_V1`。它是尚未接入 60m/4h 次级别结构前的“小转大代理”，不是正式区间套或背驰。不得将其描述成已经完成多级别小转大判断。
+
+### 22.2 pending opposite 缓冲
+
+普通反向确认失败但价格方向有效时，不直接删除事件，而写入单例 `pendingOpposite`：
+
+```text
+type
+price
+rawBar
+mergedSeq
+frozenAtr
+sourceFractalId
+```
+
+约束：
+
+* pending 不属于 level endpoint，不得进入笔、线段或中枢；
+* 同类型 pending 只保留更极端者；
+* 普通反向确认成功后立即清空；
+* tentative 被后续更极端同型分型替换后立即清空，禁止 pending 跨越新锚；
+* pending 未经桥接不得绘制正式“顶/底”标签。
+
+### 22.3 三点桥接确认
+
+设当前 tentative 为 `A`，pending opposite 为 `B`，新到达的同型 detected fractal 为 `C`。仅当以下条件全部成立时恢复：
+
+```text
+A.type == C.type
+B.type == -A.type
+A.seq < B.seq < C.seq
+
+leg1Span = B.seq - A.seq
+leg2Span = C.seq - B.seq
+outerSpan = C.seq - A.seq
+
+leg1Span >= fastRecoveryMinLegSpan
+leg2Span >= fastRecoveryMinLegSpan
+outerSpan >= minLevelMergedSpan
+
+abs(B.price-A.price) >= max(A.atr,B.atr) * fastRecoveryAtrMultiplier
+abs(C.price-B.price) >= max(B.atr,C.atr) * fastRecoveryAtrMultiplier
+
+abs(B.price-A.price)/leg1Span >= max(A.atr,B.atr) * fastRecoverySpeedAtr
+abs(C.price-B.price)/leg2Span >= max(B.atr,C.atr) * fastRecoverySpeedAtr
+```
+
+价格方向还必须满足：
+
+```text
+TOP-BOTTOM-TOP: B < A and C > B
+BOTTOM-TOP-BOTTOM: B > A and C < B
+```
+
+不要求 `C` 突破 `A`，因为更低的第二顶或更高的第二底同样可能是反转结构的一部分。
+
+### 22.4 状态写入
+
+桥接成功时必须以一次事务完成：
+
+1. 将旧 tentative `A` 冻结为 confirmed，reason=`FAST_REVERSAL`；
+2. 将 pending `B` 写入 confirmed level endpoint，reason=`FAST_REVERSAL`；
+3. 将 `C` 写为新的 tentative，reason=`NONE`；
+4. 清空 pending；
+5. 维护顶底交替、持久 ID 和并行数组等长；
+6. 为 A/B 创建的标签使用普通顶底文本，但保留 `FAST_REVERSAL` 内部原因和 tooltip，以免污染图面。
+
+桥接失败时不得部分 push，也不得冻结 A/B。
+
+### 22.5 默认参数
+
+```text
+enableFastReversalRecovery = true
+fastRecoveryMinLegSpan = 2
+fastRecoveryAtrMultiplier = 0.75
+fastRecoverySpeedAtr = 0.30
+```
+
+ATR 在本通道中只证明快速异常运动具有足够幅度和速度，不再单独决定一个分型的级别。不得通过全局降低 `minLevelMergedSpan` 来替代本通道。
+
+### 22.6 震荡保护与验收
+
+三月中枢内近水平、低速度的小摆动即使形成 `A-B-C`，也应因任一腿的 ATR 幅度或单位合成 K 速度不足而被拒绝。五月末至六月初的快速下杀和反抽应在两腿及总跨度达标后恢复旧顶和中间底。
+
+至少验证：
+
+* 快速 `TOP-BOTTOM-TOP` 成功恢复；
+* 快速 `BOTTOM-TOP-BOTTOM` 成功恢复；
+* C 未突破 A 但两腿合格，仍可恢复；
+* 单腿跨度不足时拒绝；
+* 外层总跨度不足时拒绝；
+* 横盘幅度不足时拒绝；
+* 幅度够但速度不足时拒绝；
+* pending 被新 tentative 换锚后清空；
+* 普通反向确认优先，成功时不得再触发桥接；
+* 刷新图表后 FAST_REVERSAL 端点坐标一致。

@@ -8,7 +8,7 @@
 
 ## 1. 当前状态
 
-仓库目前已经实现一套基于样例数据的本地版本：
+仓库目前已经从样例 Agent 扩展出两条可运行的研究 vertical slice：
 
 - LangGraph 显式工作流与确定性路由；
 - SQLite 安全参数化查询；
@@ -16,8 +16,15 @@
 - 因子、回测、市场状态和异常日志工具；
 - 回答证据校验与路由、检索、grounding 测试；
 - CLI 可完成索引构建和样例问答。
+- Phase 0 A 股主升浪标签、量价/相对强度/筹码代理 baseline；
+- Phase 1 Bronze/Silver/Gold SQLite 数据契约、幂等发布和质量阻断；
+- Phase 2 可解释 `WaveScore` 候选池与排除原因；
+- Phase 3 无未来数据的周频回测与 weekly document lifecycle；
+- selloff repair / reversal screen，用于急跌后的强势修复候选；
+- 宏观 point-in-time features、四类规则模型、时效性风险文档和 liquidity transmission 仪表盘。
+- 付费订阅/私人宏观材料的 local-first ingestion、观点卡、Kimi egress policy 与 hash-only audit。
 
-当前版本证明了 Agent 架构可以运行，但样例数据没有真实研究价值。下一阶段不推翻现有架构，而是把它升级为两个真实数据产品。
+当前版本已经跑通小规模真实数据，但尚不能视为生产交易系统。下一阶段重点是扩大历史覆盖、验证规则稳定性、补充数据源 fallback，并把宏观和 A 股结果接入统一检索入口。
 
 ## 2. 两条核心业务主线
 
@@ -86,6 +93,43 @@
 - `us_liquidity_backtest.html`：不同流动性状态下美股未来收益的统计分布。
 
 日报必须区分“事实”“规则计算”“历史统计”和“解释”，不把相关性写成因果性。
+
+当前宏观 MVP 实际输出位于 `outputs/macro/`：
+
+- `macro_snapshot_YYYY-MM-DD.json`：机器可读 snapshot 与 document；
+- `macro_report_YYYY-MM-DD.md`：风险、流动性来源和跨资产吸收代理；
+- `macro_dashboard_YYYY-MM-DD.html`：WALCL/TGA/RRP source decomposition 与资产流动性传导图。
+
+宏观模块默认同时重建 14 calendar days、约 10–11 个 weekday point-in-time snapshots，用来识别净流动性转向、risk/rate constraint 变化和 target absorption rotation。历史与推断分别写入：
+
+- `macro_snapshots_history`；
+- `macro_target_history`；
+- `macro_change_events`；
+- `macro_pricing_inferences`。
+
+Kimi 只在 deterministic change event 出现时读取 compact 14D packet，并输出可证伪 pricing hypothesis；它不读取 HTML、不调用同花顺、不重算 numeric evidence。
+
+对于付费订阅或私人渠道材料，原始文件不会进入通用 RAG store，也不会默认发送给 Kimi。系统只发布人工批准、non-verbatim 的 `MacroViewpoint`，再由 egress policy 决定是否允许 Kimi 读取抽象观点或明确授权的短摘录。完整设计、权限状态机和运行命令见 [Private Material Intelligence](docs/private-material-intelligence.md)。
+
+真实 observations 与发布批次保存在 `data/processed/phase1_research.db` 的
+`macro_source_observations` / `macro_source_runs`；RAG 时效文档保存在
+`macro_risk_documents` / `macro_document_chunks`。
+
+运行固定 fixture：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_macro_regime
+```
+
+刷新真实 FRED/CBOE/AkShare 数据，或使用最后一次成功 cache 重算：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_macro_regime --live --as-of 2026-07-15
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_macro_regime --live --reuse-cache --as-of 2026-07-15 --history-days 14
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_macro_regime --live --reuse-cache --as-of 2026-07-15 --history-days 14 --with-kimi
+```
+
+CLI 默认要求至少 50% core coverage 才发布新 finalized document；不足时上一版继续有效。
 
 ## 4. 总体架构
 
@@ -407,7 +451,29 @@ cp .env.example .env
 
 **面试可讲**：如何把“主升浪”转化为可证伪规则，以及如何防止标签、文本与横截面数据泄漏。
 
-### Phase 1：数据契约与最小真实数据链路
+### Thesis lifecycle validation（最小纵向切片）
+
+Phase 0 之后先加入轻量 thesis state machine：每天用结构化 market features 做确定性验证，只有状态变化才进入 retrieval 和 Kimi JSON update。相同状态变化、数值证据和上下文使用 SHA-256 cache，避免重复 token 消耗。
+
+```text
+market features
+  -> validate_thesis_state
+  -> status unchanged: stop
+  -> status changed: retrieve at most 3 chunks
+  -> cache hit: reuse JSON
+  -> cache miss: Kimi, temperature=0, max_tokens=800
+  -> key lifecycle states: render research note
+```
+
+本地 smoke test：
+
+```bash
+.venv/bin/python scripts/run_thesis_validation.py --ticker 300308.SZ --date 2025-07-15
+```
+
+应用只读取已经 export 到当前进程的 `MOONSHOT_API_KEY`，不会主动加载任何 dotenv 文件。mock case 是 `WATCHLIST -> THEME_WARMUP`，按规则无需调用 LLM。
+
+### Phase 1：数据契约与最小真实数据链路（pilot 已实现）
 
 **工作**
 
@@ -418,11 +484,13 @@ cp .env.example .env
 
 **真实产出**：一份包含来源、采集批次、缺失检查的小型真实 SQLite 数据库。
 
+当前 `data/processed/phase1_research.db` 包含 ingestion runs、Bronze 原始记录、Silver 标准化日线/宏观观测、Gold 研究表、quality checks 和 dataset versions。A 股使用 8 只研究样本与沪深300真实缓存；宏观使用 FRED 的 WALCL、WTREGEN、RRPONTSYD。
+
 **完成定义**：断网 fixture 测试可复现；重复运行不产生重复行；部分失败不会污染上一版 Gold 数据。
 
 **面试可讲**：第三方数据不稳定时，adapter、数据契约与可观测性如何保护下游。
 
-### Phase 2：A 股筛选 MVP
+### Phase 2：A 股筛选 MVP（pilot 已实现）
 
 **工作**
 
@@ -433,11 +501,13 @@ cp .env.example .env
 
 **真实产出**：每天可以重跑、每个候选都能解释的 A 股 Top N 列表。
 
+当前产出位于 `outputs/phase2/`。横截面排名严格命名为 pilot rank，不冒充全市场排名；历史 ST 状态缺失时在 tradability 表记录降级说明。
+
 **完成定义**：任意得分都能追溯到原始行情和配置；无未来数据；异常行情会阻断或降级结果。
 
 **面试可讲**：如何把模糊的“主升浪”转化为可计算、可证伪的规则。
 
-### Phase 3：A 股事件驱动回测与研究评估
+### Phase 3：A 股事件驱动回测与研究评估（pilot 已实现）
 
 **工作**
 
@@ -448,9 +518,47 @@ cp .env.example .env
 
 **真实产出**：可复现的样本外回测报告和失败阶段分析。
 
+当前产出位于 `outputs/phase3/`。默认使用每个 calendar week 最后一个交易日的 `t` 日收盘信号、`t+1` 开盘执行和 5 个交易日持有；周内仍每天更新 features 与风险状态。报告包含换仓成本、OOS 日期分段以及 3×3 threshold/holding-period sensitivity。由于股票池来自事后案例样本，OOS 日期切分不能消除 universe selection bias，回测数字只验证工程协议，不能作为收益证据。
+
 **完成定义**：不存在 look-ahead；报告含基准、成本、样本数、回撤和敏感性结果；随机抽样日期可手工复核。
 
 **面试可讲**：如何识别未来函数、幸存者偏差、过拟合和不可成交假设。
+
+### Weekly document lifecycle（Phase 3 的 RAG 成本优化，已实现）
+
+持仓以周为主，不意味着把每日事实降采样掉。系统保留 SQLite 日频行情、特征、质量检查和 thesis validation，但每只股票每周只维护一份 derived `WeeklyResearchDocument`：周内是 draft，每天确定性覆盖更新；周末 finalized 后才把周摘要加入索引。重要状态变化另存为小型 `STATE_CHANGE` chunk，并且只有重要状态变化才标记需要 Kimi update。
+
+```text
+daily Gold facts（每日更新）
+  -> weekly draft（同 ticker/week 幂等覆盖）
+  -> important state change（立即形成 event chunk）
+  -> week finalized（summary 进入 retrieval index）
+```
+
+数据库新增 `weekly_documents` 和 `weekly_document_chunks`。截至 2026-06-30 的 pilot 数据，相对每天生成一份可索引文档的 7,998 份基线，当前只有 1,946 个可索引 chunks，减少约 75.7%；重复运行只重建本周和上一周，并按 source hash 决定是否增加版本。详细决策见 `docs/adr/0006-weekly-research-document-lifecycle.md`。
+
+### Canonical Knowledge Contract 与 Store（RAG Phase 1～2，已实现）
+
+真实研究文档现在有统一的document/chunk类型、ticker/theme/thesis关联、event/as-of/available-at时间、版本、来源、可靠性、hash和indexable语义。SQLite Knowledge Store以不可变document version、原子batch ingestion和outbox式index jobs保存这些对象；重复ingestion不产生重复行或embedding任务，历史查询在相似度计算前强制过滤未来才可获得的chunk。
+
+当前Phase只完成领域契约与Store，尚未把旧Markdown、weekly documents和thesis notes迁入，也没有替换现有样例BM25/vector index。设计见 `docs/adr/0008-canonical-knowledge-contract.md` 与 `docs/adr/0009-sqlite-knowledge-store.md`。
+
+### Selloff repair leader screen（急跌修复研究切片，已实现）
+
+市场急跌后不直接沿用“必须正在突破新高”的硬条件，而是先确认沪深300处于 `SELLOFF_REPAIR`，再寻找急跌前具备主升 signature、下跌中相对抗跌、修复日重新收复均线并获得成交量确认的股票。
+
+```text
+全A当日快照
+  -> 流动性核心池 + 强修复池 cheap prefilter
+  ->  bounded historical download
+  -> prior leader quality + selloff resilience + repair confirmation
+  -> Focus Candidates / Broader Watchlist
+  -> 仅对 Focus Candidates 做题材与 thesis enrichment
+```
+
+`focus_selected` 不是当日涨幅榜：它还要求此前20日 leader signature、急跌期和修复日相对市场表现、20日RS、120日价格位置、全市场成交额容量和风险标记同时合格。详细规则和数据降级语义见 `docs/adr/0007-selloff-repair-leader-screen.md`。
+
+每次结果按 `as_of + ticker + score_version` 幂等写入 SQLite 表 `gold_cn_reversal_screen_results`，重复运行不会生成重复行；CSV/Markdown 是该 Gold 横截面的展示产物。
 
 ### Phase 4：美股流动性 MVP
 
@@ -622,6 +730,28 @@ python3 -m quant_agent.cli.build_phase0_baseline --refresh-data
 python3 -m quant_agent.cli.build_phase0_baseline
 ```
 
+Phase 1～3 pilot 一次运行：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_phase1_to_phase3
+```
+
+命令同时更新 `data/processed/phase1_research.db` 中的周文档表，并把最新一周的可读 Markdown 写到 `outputs/weekly/`。输出 JSON 的 `documents_touched_this_run` 用于确认增量范围，`embedding_reduction_ratio` 用于观测相对日文档基线的索引缩减比例。
+
+急跌修复筛选（联网首次运行）：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_reversal_screen \
+  --as-of 2026-07-14 --max-symbols 500 --top-n 30 --workers 8
+```
+
+使用已落盘快照和历史缓存复现评分，不访问网络：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_reversal_screen \
+  --as-of 2026-07-14 --max-symbols 500 --top-n 30 --from-cache
+```
+
 ### Build and ask
 
 ```bash
@@ -653,8 +783,4 @@ pytest
 
 ## 17. 下一步
 
-Phase 0 已建立五段正样本和四段待细分 hard negative 的研究基线。负样本池重点覆盖外观类似主升浪、但可能属于量化拉升、游资炒作、突破失败或伪叙事的区间；这些机制允许多标签，但当前只确认标签极性，尚未把价格形态猜测写成事实。下一步结合量价轨迹、龙虎榜与 point-in-time 文本证据完成归因，随后进入 **Phase 1：数据契约与最小真实数据链路**。
-
-Phase 1 的第一个模块是 `data_sources/base.py`：共同确定统一数据记录、请求结果、错误类型和 adapter 接口，再把 Phase 0 的临时 AkShare 采集逻辑迁移到正式 adapter。
-
-这样第一步虽然小，却会成为后续 A 股、FRED 和全球市场数据接入共同依赖的工程基础。
+Phase 0～3 的 pilot vertical slice 已可运行。下一步不是继续美化小样本收益，而是扩大到 point-in-time 全市场股票池、补历史 ST/停牌/行业成分和全市场成交额截面，再将 Phase 2 的每日 Gold 结果接入 RAG/Agent。当前高收益回测受案例股票池选择偏差影响，必须先解决 universe data 才能进入有效性研究。

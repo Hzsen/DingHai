@@ -1,0 +1,19 @@
+{
+  "close": 142.50,
+  "return_5d": 0.042,
+  "return_20d": 0.118,
+  "amount_rank_market": 76,
+  "amount_ratio_20d": 1.52,
+  "rs_market_20d": 0.083,
+  "rs_industry_20d": 0.031,
+  "distance_to_120d_high": -0.061,
+  "distance_to_250d_high": -0.104,
+  "new_high_count_20d": 0,
+  "turnover_20d_sum": 0.42,
+  "high_volume_stall_flag": false,
+  "drawdown_from_high": -0.072,
+  "below_20d_ma": false,
+  "below_60d_ma": false,
+  "theme_heat_score": 2.0,
+  "fundamental_score": 2.0
+}

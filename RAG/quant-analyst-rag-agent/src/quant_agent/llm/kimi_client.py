@@ -29,15 +29,15 @@ class KimiConfig:
     max_attempts: int = 3
 
     @classmethod
-    def from_env(cls, *, load_dotenv_file: bool = True) -> "KimiConfig":
-        if load_dotenv_file:
-            try:
-                from dotenv import load_dotenv
+    def from_env(cls, *, load_dotenv_file: bool = False) -> "KimiConfig":
+        """Build config from exported variables without opening dotenv files.
 
-                load_dotenv()
-            except ImportError:
-                pass
-        api_key = os.getenv("MOONSHOT_API_KEY", "").strip()
+        ``load_dotenv_file`` remains only for call-site compatibility and is
+        intentionally ignored. Secrets must already exist in the process
+        environment.
+        """
+        del load_dotenv_file
+        api_key = (os.getenv("MOONSHOT_API_KEY") or "").strip()
         if not api_key:
             raise KimiAPIError("MOONSHOT_API_KEY is not configured")
         return cls(
@@ -67,22 +67,42 @@ class KimiClient:
         self.session = session or requests.Session()
         self.sleep = sleep
 
-    def _chat_payload(self, messages: Sequence[Mapping[str, str]]) -> dict[str, Any]:
+    def _chat_payload(
+        self,
+        messages: Sequence[Mapping[str, str]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.0,
+        max_tokens: int = 2_048,
+    ) -> dict[str, Any]:
         return {
-            "model": self.config.model,
+            "model": model or self.config.model,
             "messages": list(messages),
             "response_format": {"type": "json_object"},
             "thinking": {"type": "disabled"},
-            "max_completion_tokens": 2_048,
+            "temperature": temperature,
+            "max_completion_tokens": max_tokens,
         }
 
-    def complete_json(self, messages: Sequence[Mapping[str, str]]) -> KimiResult:
+    def complete_json(
+        self,
+        messages: Sequence[Mapping[str, str]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.0,
+        max_tokens: int = 2_048,
+    ) -> KimiResult:
         url = f"{self.config.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",
             "Content-Type": "application/json",
         }
-        payload = self._chat_payload(messages)
+        payload = self._chat_payload(
+            messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
         last_error: Exception | None = None
 
         for attempt in range(self.config.max_attempts):
@@ -104,7 +124,7 @@ class KimiClient:
                     raise KimiAPIError("Kimi JSON response is not an object")
                 return KimiResult(
                     data=parsed,
-                    model=str(body.get("model", self.config.model)),
+                    model=str(body.get("model", model or self.config.model)),
                     usage=body.get("usage", {}),
                     request_id=body.get("id"),
                 )

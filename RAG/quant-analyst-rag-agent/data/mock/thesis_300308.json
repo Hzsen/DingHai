@@ -1,0 +1,20 @@
+{
+  "thesis_id": "300308-ai-infrastructure-2025-07",
+  "ticker": "300308.SZ",
+  "name": "中际旭创",
+  "theme": "AI infrastructure and optical modules",
+  "thesis_type": "AI_INFRASTRUCTURE_CHAIN",
+  "start_date": "2025-07-15",
+  "end_date": null,
+  "status": "WATCHLIST",
+  "key_factors": ["market relative strength", "amount expansion", "new highs"],
+  "validation_signals": ["near 120d high", "sustained amount rank"],
+  "invalidation_signals": ["high-volume stall", "break below 60d MA"],
+  "narrative_summary": "Research seed for an AI infrastructure trend thesis.",
+  "fundamental_logic": "Kept as historical research context; not used by cheap validation rules.",
+  "capital_flow_logic": "Validation depends on price, amount, relative strength, and chip proxies.",
+  "risk_notes": "A warm theme alone does not confirm a main uptrend.",
+  "source_document_ids": ["adr/0002-a-share-leader-baseline"],
+  "created_at": "2025-07-15T16:00:00+08:00",
+  "updated_at": "2025-07-15T16:00:00+08:00"
+}

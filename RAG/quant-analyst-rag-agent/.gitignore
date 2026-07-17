@@ -2,9 +2,14 @@
 .env.*
 !.env.example
 
+.cache/
+
 data/raw/phase0_market_prices.parquet
 data/raw/phase0_csi300.parquet
 data/features/*.parquet
+data/raw/sina/
+data/interim/reversal/
+data/private/
 
 __pycache__/
 .pytest_cache/

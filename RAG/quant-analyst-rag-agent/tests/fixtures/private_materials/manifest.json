@@ -1,0 +1,15 @@
+{
+  "material_id": "material/demo-private-macro-20260715",
+  "title": "Synthetic licensed macro note",
+  "source_label": "licensed-material-abstracted",
+  "sensitivity": "LICENSED_LOCAL_ONLY",
+  "rights_scope": "PERSONAL_RESEARCH_ONLY",
+  "external_context_mode": "ABSTRACTED_CLAIMS_ONLY",
+  "max_external_chars": 3000,
+  "redaction_required": true,
+  "owner": "local-user",
+  "as_of": "2026-07-15T20:00:00+00:00",
+  "license_expires_on": null,
+  "created_at": "2026-07-15T20:05:00+00:00",
+  "updated_at": "2026-07-15T20:05:00+00:00"
+}

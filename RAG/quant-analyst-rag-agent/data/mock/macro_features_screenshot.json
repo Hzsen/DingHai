@@ -1,0 +1,31 @@
+{
+  "as_of": "2026-07-10T20:00:00+00:00",
+  "metadata": {
+    "scope": "screenshot_fixture",
+    "warning": "Rule and dashboard validation only; not a current macro reading."
+  },
+  "features": [
+    {"series_id":"DFII10","value":2.35,"unit":"percent","delta_1d":0.03,"delta_5d":0.06,"delta_20d":0.11,"percentile_5y":0.97,"z_change_5d_252":0.78,"source":"screenshot_fixture"},
+    {"series_id":"DGS10","value":4.62,"unit":"percent","delta_1d":-0.008,"delta_5d":0.07,"delta_20d":0.01,"percentile_5y":0.90,"z_change_5d_252":0.72,"source":"screenshot_fixture"},
+    {"series_id":"DGS30","value":5.10,"unit":"percent","delta_1d":-0.007,"delta_5d":0.08,"delta_20d":0.03,"percentile_5y":0.99,"z_change_5d_252":1.04,"source":"screenshot_fixture"},
+    {"series_id":"DGS2","value":4.28,"unit":"percent","delta_1d":-0.004,"delta_5d":-0.01,"delta_20d":0.03,"percentile_5y":0.54,"source":"screenshot_fixture"},
+    {"series_id":"T10YIE","value":2.28,"unit":"percent","delta_1d":0.024,"delta_5d":0.02,"delta_20d":-0.03,"percentile_5y":0.26,"source":"screenshot_fixture"},
+    {"series_id":"DXY","value":101.19,"unit":"index","delta_1d":-0.09,"delta_5d":0.07,"delta_20d":1.66,"percentile_5y":0.45,"source":"screenshot_fixture"},
+    {"series_id":"BAMLC0A0CM","value":0.68,"unit":"percent","delta_1d":0.0001,"delta_5d":0.002,"delta_20d":0.0024,"source":"screenshot_fixture"},
+    {"series_id":"VIX","value":17.4,"unit":"index","delta_5d":0.5,"source":"screenshot_fixture"},
+    {"series_id":"VIX3M","value":20.0,"unit":"index","delta_5d":0.3,"source":"screenshot_fixture"},
+    {"series_id":"MOVE","value":77.8,"unit":"index","delta_5d":1.0,"source":"screenshot_fixture"},
+    {"series_id":"SPY","value":600,"unit":"usd","delta_1d":-3,"delta_5d":-6,"delta_20d":-4,"source":"screenshot_fixture"},
+    {"series_id":"QQQ","value":530,"unit":"usd","delta_1d":-10,"delta_5d":-8,"delta_20d":-4,"source":"screenshot_fixture"},
+    {"series_id":"IWM","value":220,"unit":"usd","delta_1d":-1.8,"delta_5d":-4,"delta_20d":2,"source":"screenshot_fixture"},
+    {"series_id":"GLD","value":367.13,"unit":"usd","delta_1d":-0.31,"delta_5d":-14.9,"delta_20d":-19.2,"source":"screenshot_fixture"},
+    {"series_id":"IEF","value":92,"unit":"usd","delta_1d":-0.4,"delta_5d":-1.2,"delta_20d":-2.0,"source":"screenshot_fixture"},
+    {"series_id":"TLT","value":84,"unit":"usd","delta_1d":-0.8,"delta_5d":-2.0,"delta_20d":-3.5,"source":"screenshot_fixture"},
+    {"series_id":"IWM_SPY","value":0.36,"unit":"ratio","delta_5d":-0.01,"delta_20d":-0.015,"source":"screenshot_fixture"},
+    {"series_id":"KRE_SPY","value":0.10,"unit":"ratio","delta_5d":-0.002,"delta_20d":-0.005,"source":"screenshot_fixture"},
+    {"series_id":"SOXX_QQQ","value":0.45,"unit":"ratio","delta_5d":-0.02,"delta_20d":-0.03,"source":"screenshot_fixture"},
+    {"series_id":"WALCL","value":6600000,"unit":"millions_usd","delta_20d":10000,"source":"screenshot_fixture"},
+    {"series_id":"WTREGEN","value":850000,"unit":"millions_usd","delta_20d":40000,"source":"screenshot_fixture"},
+    {"series_id":"RRPONTSYD","value":100000,"unit":"millions_usd","delta_20d":-5000,"source":"screenshot_fixture"}
+  ]
+}
