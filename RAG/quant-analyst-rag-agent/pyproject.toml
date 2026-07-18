@@ -14,6 +14,9 @@ dependencies = [
     "requests>=2.31.0",
 ]
 
+[project.scripts]
+quant-agent = "quant_agent.cli.main:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",

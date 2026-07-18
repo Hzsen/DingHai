@@ -425,6 +425,56 @@ class KnowledgeStore:
             ).fetchall()
         return [_chunk_from_row(row) for row in rows]
 
+    def get_stored_chunk(
+        self,
+        chunk_id: str,
+        document_version: int,
+        *,
+        require_current_indexable: bool = False,
+        content_hash: str | None = None,
+    ) -> StoredKnowledgeChunk | None:
+        conditions = [
+            "c.chunk_id=?", "c.document_version=?",
+            "d.document_id=c.document_id", "d.version=c.document_version",
+        ]
+        params: list[object] = [chunk_id, document_version]
+        if require_current_indexable:
+            conditions.extend([
+                "d.is_latest=1", "c.indexable=1",
+                "d.status NOT IN (?,?)",
+            ])
+            params.extend([
+                KnowledgeDocumentStatus.SUPERSEDED.value,
+                KnowledgeDocumentStatus.RETRACTED.value,
+            ])
+        if content_hash is not None:
+            conditions.append("c.content_hash=?")
+            params.append(content_hash)
+        with self._connect() as conn:
+            chunk_row = conn.execute(
+                f"""SELECT c.* FROM knowledge_chunks c,knowledge_documents d
+                WHERE {' AND '.join(conditions)}""",
+                params,
+            ).fetchone()
+            if chunk_row is None:
+                return None
+            document_row = conn.execute(
+                "SELECT * FROM knowledge_documents WHERE document_id=? AND version=?",
+                (chunk_row["document_id"], chunk_row["document_version"]),
+            ).fetchone()
+        if document_row is None:
+            return None
+        return StoredKnowledgeChunk(_document_from_row(document_row), _chunk_from_row(chunk_row))
+
+    def index_job_counts(self) -> dict[str, int]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT status,COUNT(*) AS count FROM knowledge_index_jobs GROUP BY status"
+            ).fetchall()
+        counts = {status.value: 0 for status in IndexJobStatus}
+        counts.update({str(row["status"]): int(row["count"]) for row in rows})
+        return counts
+
     def query_chunks(self, query: KnowledgeQuery, limit: int | None = None) -> list[StoredKnowledgeChunk]:
         conditions = [
             "d.is_latest=1", "c.indexable=1", "d.available_at<=?", "c.available_at<=?",

@@ -12,7 +12,18 @@ class Paths:
     def __post_init__(self) -> None:
         if self.project_root is None:
             env_root = os.getenv("QUANT_AGENT_PROJECT_ROOT")
-            root = Path(env_root).expanduser().resolve() if env_root else Path(__file__).resolve().parents[2]
+            if env_root:
+                root = Path(env_root).expanduser().resolve()
+            else:
+                root = next(
+                    (
+                        candidate
+                        for candidate in (Path.cwd().resolve(), *Path.cwd().resolve().parents)
+                        if (candidate / "pyproject.toml").is_file()
+                        and (candidate / "src" / "quant_agent").is_dir()
+                    ),
+                    Path(__file__).resolve().parents[2],
+                )
             object.__setattr__(self, "project_root", root)
 
     @property
@@ -46,6 +57,12 @@ class Paths:
     @property
     def db_path(self) -> Path:
         return self.processed_dir / "quant_agent.db"
+
+    @property
+    def knowledge_db_path(self) -> Path:
+        value = os.getenv("KNOWLEDGE_DB_PATH")
+        path = Path(value).expanduser() if value else self.processed_dir / "phase1_research.db"
+        return path.resolve() if path.is_absolute() else (self.project_root / path).resolve()
 
     @property
     def bm25_index_path(self) -> Path:

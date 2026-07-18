@@ -23,6 +23,7 @@
 - selloff repair / reversal screen，用于急跌后的强势修复候选；
 - 宏观 point-in-time features、四类规则模型、时效性风险文档和 liquidity transmission 仪表盘。
 - 付费订阅/私人宏观材料的 local-first ingestion、观点卡、Kimi egress policy 与 hash-only audit。
+- Phase A canonical search：typed query contract、Markdown 幂等迁移、中文 SQLite FTS5、outbox worker 与统一 `quant-agent search`。
 
 当前版本已经跑通小规模真实数据，但尚不能视为生产交易系统。下一阶段重点是扩大历史覆盖、验证规则稳定性、补充数据源 fallback，并把宏观和 A 股结果接入统一检索入口。
 
@@ -130,6 +131,20 @@ PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_macro_regime --live --reu
 ```
 
 CLI 默认要求至少 50% core coverage 才发布新 finalized document；不足时上一版继续有效。
+
+### Canonical Knowledge Search（Phase A）
+
+SQLite `KnowledgeStore` 现在是文档检索的 canonical source。首次运行会把 `data/docs/**/*.md` 幂等迁移为 versioned `KnowledgeDocument/KnowledgeChunk`，消费 transactional outbox 并建立中文/英文 FTS5 index：
+
+```bash
+.venv/bin/python -m pip install . --no-deps --no-build-isolation
+quant-agent index migrate-markdown
+quant-agent index sync
+quant-agent index status
+quant-agent search "韩国加息是否导致亚洲半导体下跌？" --as-of 2026-07-17 --top-k 6
+```
+
+搜索默认只返回当时已可见的 `FINALIZED` evidence，不调用 Kimi。完整 contract、幂等语义和验收记录见 [Phase A Canonical Search](docs/phase-a-canonical-search.md)。
 
 ## 4. 总体架构
 

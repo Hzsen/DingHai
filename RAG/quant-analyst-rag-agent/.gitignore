@@ -3,6 +3,8 @@
 !.env.example
 
 .cache/
+build/
+*.egg-info/
 
 data/raw/phase0_market_prices.parquet
 data/raw/phase0_csi300.parquet
