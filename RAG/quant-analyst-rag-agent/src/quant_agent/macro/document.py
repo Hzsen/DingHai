@@ -8,12 +8,14 @@ from enum import Enum
 from pathlib import Path
 
 from domain.macro import MacroDocumentStatus, MacroRiskDocument, MacroSnapshot, SeriesFeature
+from domain.market_theme import MarketThemeState, ThemeHorizon
 
 
 def build_macro_document(
     snapshot: MacroSnapshot,
     features: dict[str, SeriesFeature],
     status: MacroDocumentStatus = MacroDocumentStatus.FINALIZED_DAILY,
+    market_theme_states: tuple[MarketThemeState, ...] = (),
 ) -> MacroRiskDocument:
     source_ids = tuple(sorted(f"{key}/{feature.observation_date}" for key, feature in features.items()))
     now = snapshot.as_of
@@ -33,6 +35,7 @@ def build_macro_document(
         data_coverage=snapshot.data_coverage, confidence=snapshot.confidence,
         stale_series=snapshot.stale_series, source_observation_ids=source_ids,
         created_at=now, updated_at=now,
+        market_theme_states=market_theme_states,
         metadata={"model_version": snapshot.model_version, "snapshot_id": snapshot.snapshot_id},
     )
 
@@ -132,6 +135,22 @@ def publish_macro_document(db_path: Path | str, document: MacroRiskDocument) -> 
             "EQUITY_TRANSMISSION": equity_flow_text,
             "DEFENSIVE_TRANSMISSION": defensive_flow_text,
         }
+        for state in document.market_theme_states:
+            horizon_name = "FAST" if state.horizon is ThemeHorizon.FAST else "REPRICING"
+            active = "; ".join(
+                f"{item.theme_id} ({item.confidence:.0%}, confirmations {item.confirmation_count}/{item.confirmation_total}, persistence {item.persistence_periods})"
+                for item in state.active_themes
+            ) or "none"
+            chunks[f"MARKET_THEME_{horizon_name}"] = (
+                f"Dominant {state.dominant_theme_id or 'NONE'}: {state.summary} Active themes: {active}"
+            )
+            if state.active_themes:
+                dominant = state.active_themes[0]
+                chunks[f"MARKET_THEME_{horizon_name}_INVALIDATION"] = (
+                    f"Theme {dominant.theme_id}; supporting evidence: {', '.join(dominant.supporting_evidence)}; "
+                    f"conflicting evidence: {', '.join(dominant.conflicting_evidence) or 'none'}; "
+                    f"invalidation: {', '.join(dominant.invalidation_conditions)}"
+                )
         indexable = int(effective_status is MacroDocumentStatus.FINALIZED_DAILY)
         for chunk_type, content in chunks.items():
             conn.execute(

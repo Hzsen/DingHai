@@ -101,6 +101,10 @@
 - `macro_report_YYYY-MM-DD.md`：风险、流动性来源和跨资产吸收代理；
 - `macro_dashboard_YYYY-MM-DD.html`：WALCL/TGA/RRP source decomposition 与资产流动性传导图。
 
+宏观输出现在按三层组织：`MacroRegime` 描述数周至数月约束，`MarketThemeState`
+识别 1–5 日跨资产交易主题与 14 日重定价主题，RAG / LLM 只负责结合研究和政策材料解释
+主题。HTML dashboard 可切换 horizon 和候选主题，并展示支持证据、冲突与失效条件。
+
 宏观模块默认同时重建 14 calendar days、约 10–11 个 weekday point-in-time snapshots，用来识别净流动性转向、risk/rate constraint 变化和 target absorption rotation。历史与推断分别写入：
 
 - `macro_snapshots_history`；
@@ -552,11 +556,17 @@ daily Gold facts（每日更新）
 
 数据库新增 `weekly_documents` 和 `weekly_document_chunks`。截至 2026-06-30 的 pilot 数据，相对每天生成一份可索引文档的 7,998 份基线，当前只有 1,946 个可索引 chunks，减少约 75.7%；重复运行只重建本周和上一周，并按 source hash 决定是否增加版本。详细决策见 `docs/adr/0006-weekly-research-document-lifecycle.md`。
 
-### Canonical Knowledge Contract 与 Store（RAG Phase 1～2，已实现）
+### Canonical Knowledge Contract、Store 与 Adapters（RAG Phase 1～3，已实现）
 
 真实研究文档现在有统一的document/chunk类型、ticker/theme/thesis关联、event/as-of/available-at时间、版本、来源、可靠性、hash和indexable语义。SQLite Knowledge Store以不可变document version、原子batch ingestion和outbox式index jobs保存这些对象；重复ingestion不产生重复行或embedding任务，历史查询在相似度计算前强制过滤未来才可获得的chunk。
 
-当前Phase只完成领域契约与Store，尚未把旧Markdown、weekly documents和thesis notes迁入，也没有替换现有样例BM25/vector index。设计见 `docs/adr/0008-canonical-knowledge-contract.md` 与 `docs/adr/0009-sqlite-knowledge-store.md`。
+Phase 3增加`StaticMarkdownAdapter`、`WeeklyResearchAdapter`、`ThesisNoteAdapter`和`ScreeningReportAdapter`。Adapter只解释来源，统一的migration service负责版本分配和原子发布；Gold筛选报告只建立检索指针，数值真相继续留在SQLite Gold表。
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.ingest_knowledge
+```
+
+真实迁移发现1,702份文档，新增1,693份document和2,575个chunks，产生1,947个待处理index jobs；立即重跑全部skip且新增0行。设计与验收见 `docs/adr/0008-canonical-knowledge-contract.md`、`docs/adr/0009-sqlite-knowledge-store.md` 与 `docs/adr/0011-knowledge-adapters-and-real-migration.md`。
 
 ### Selloff repair leader screen（急跌修复研究切片，已实现）
 

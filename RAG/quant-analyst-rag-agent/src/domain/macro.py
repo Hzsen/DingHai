@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
+from domain.market_theme import MarketThemeState
+
 
 class MacroDocumentStatus(str, Enum):
     DRAFT_INTRADAY = "DRAFT_INTRADAY"
@@ -187,4 +189,5 @@ class MacroRiskDocument:
     source_observation_ids: tuple[str, ...]
     created_at: datetime
     updated_at: datetime
+    market_theme_states: tuple[MarketThemeState, ...] = ()
     metadata: dict[str, str | float | int | bool | None] = field(default_factory=dict)

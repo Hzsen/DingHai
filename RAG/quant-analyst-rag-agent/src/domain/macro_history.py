@@ -17,6 +17,9 @@ class MacroHistoryPoint:
     source_flows_bn: dict[str, float]
     target_absorption: dict[str, float]
     target_states: dict[str, str]
+    dominant_theme_id: str | None = None
+    active_theme_ids: tuple[str, ...] = ()
+    theme_scores: dict[str, float] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,4 +52,4 @@ class MacroAnalysisPacket:
     change_events: tuple[dict[str, object], ...]
     candidate_risk_types: tuple[str, ...]
     data_quality: dict[str, object]
-
+    market_themes: tuple[dict[str, object], ...] = ()

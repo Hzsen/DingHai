@@ -27,6 +27,7 @@ from quant_agent.macro.kimi_analysis import (
 )
 from quant_agent.macro.report import publish_macro_outputs
 from quant_agent.macro.rules import evaluate_macro
+from quant_agent.macro.themes import build_market_theme_states
 from quant_agent.llm.kimi_client import KimiAPIError, KimiClient, KimiConfig
 
 
@@ -120,9 +121,6 @@ def main() -> None:
             f"macro coverage {snapshot.data_coverage:.0%} is below publish threshold "
             f"{args.minimum_coverage:.0%}; previous finalized document remains active"
         )
-    status = MacroDocumentStatus.DRAFT_INTRADAY if args.draft else MacroDocumentStatus.FINALIZED_DAILY
-    document = build_macro_document(snapshot, features, status=status)
-    publish_macro_document(db_path, document)
     history_points = []
     change_events = []
     packet = None
@@ -133,7 +131,12 @@ def main() -> None:
         history_points = build_macro_history(observations, as_of, args.history_days)
         change_events = detect_macro_changes(history_points)
         publish_macro_history(db_path, history_points, change_events)
-        packet = build_macro_analysis_packet(history_points, change_events)
+    market_theme_states = build_market_theme_states(features, snapshot, history_points)
+    status = MacroDocumentStatus.DRAFT_INTRADAY if args.draft else MacroDocumentStatus.FINALIZED_DAILY
+    document = build_macro_document(snapshot, features, status=status, market_theme_states=market_theme_states)
+    publish_macro_document(db_path, document)
+    if args.live:
+        packet = build_macro_analysis_packet(history_points, change_events, market_theme_states)
         kimi_inference = load_macro_pricing_inference(db_path, packet.packet_id)
         if kimi_inference is not None:
             kimi_status = "loaded_from_published_cache"
@@ -159,7 +162,8 @@ def main() -> None:
             except (KimiAPIError, MacroPricingAnalysisError, OSError) as exc:
                 kimi_status = f"failed:{type(exc).__name__}"
     paths = publish_macro_outputs(
-        output_dir, snapshot, document, history_points, change_events, kimi_inference, packet
+        output_dir, snapshot, document, history_points, change_events, kimi_inference, packet,
+        market_theme_states=market_theme_states,
     )
     result = {
         "input": input_label, "input_metadata": metadata, "snapshot_id": snapshot.snapshot_id,
@@ -174,6 +178,11 @@ def main() -> None:
         "history_window_days": args.history_days if args.live else None,
         "history_points": len(history_points), "change_event_count": len(change_events),
         "analysis_packet_id": packet.packet_id if packet else None,
+        "market_themes": [
+            {"horizon": state.horizon.value, "dominant_theme_id": state.dominant_theme_id,
+             "confidence": state.confidence}
+            for state in market_theme_states
+        ],
         "kimi_status": kimi_status, "kimi_cache_hit": kimi_cache_hit,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))

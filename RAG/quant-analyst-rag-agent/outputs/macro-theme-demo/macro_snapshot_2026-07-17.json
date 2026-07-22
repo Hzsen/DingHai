@@ -1,0 +1,2659 @@
+{
+  "snapshot": {
+    "snapshot_id": "macro/2026-07-17/1962e602abdf",
+    "as_of": "2026-07-17T23:59:00+00:00",
+    "valid_until": "2026-07-18T23:59:00+00:00",
+    "primary_regime": "RISK_ON_CONFIRMING",
+    "risk_state": "NORMAL",
+    "risk_score": 20.913915899793405,
+    "liquidity_state": "STRONGLY_EXPANDING",
+    "liquidity_score": 100,
+    "inflation_quadrant": "DISINFLATION_OR_GROWTH_SCARE",
+    "rate_pressure_state": "NEUTRAL",
+    "rate_pressure_score": 45.0,
+    "liquidity_source_flows": [
+      {
+        "source_id": "FED_BALANCE_SHEET",
+        "flow_billions_usd_20d": 7.383,
+        "direction": "INJECTION",
+        "observation_date": "2026-07-15T00:00:00+00:00",
+        "confidence": 0.8
+      },
+      {
+        "source_id": "TREASURY_GENERAL_ACCOUNT",
+        "flow_billions_usd_20d": 162.478,
+        "direction": "INJECTION",
+        "observation_date": "2026-07-15T00:00:00+00:00",
+        "confidence": 0.8
+      },
+      {
+        "source_id": "OVERNIGHT_REVERSE_REPO",
+        "flow_billions_usd_20d": 6.301,
+        "direction": "INJECTION",
+        "observation_date": "2026-07-16T00:00:00+00:00",
+        "confidence": 0.9
+      }
+    ],
+    "liquidity_target_flows": [
+      {
+        "target_id": "US_BANKS_CREDIT",
+        "proxy_symbol": "KRE",
+        "state": "ABSORBING",
+        "absorption_score": 50.5698986020421,
+        "liquidity_impulse_component": 28.000000000000004,
+        "market_confirmation_component": 30.776856551938806,
+        "structural_component": -8.206957949896703,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE",
+          "MARKET_ABSORPTION_CONFIRMED"
+        ],
+        "conflicting_signals": [
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "US_LARGE_CAP",
+        "proxy_symbol": "SPY",
+        "state": "MIXED",
+        "absorption_score": 16.74924162195688,
+        "liquidity_impulse_component": 30.0,
+        "market_confirmation_component": -5.759366788063778,
+        "structural_component": -7.49139158997934,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "RELATIVE_TRANSMISSION_WEAKENING"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "US_SMALL_CAP",
+        "proxy_symbol": "IWM",
+        "state": "MIXED",
+        "absorption_score": 1.0319470597028726,
+        "liquidity_impulse_component": 32.0,
+        "market_confirmation_component": -19.148182375369437,
+        "structural_component": -11.81987056492769,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "DOLLAR_CASH",
+        "proxy_symbol": "DTWEXBGS",
+        "state": "MIXED",
+        "absorption_score": -6.470126010375125,
+        "liquidity_impulse_component": -22.0,
+        "market_confirmation_component": -0.7899965753028148,
+        "structural_component": 16.31987056492769,
+        "confidence": 0.46666666666666673,
+        "supporting_signals": [
+          "MACRO_STRUCTURE_SUPPORTIVE"
+        ],
+        "conflicting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_NEGATIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "AI_SEMICONDUCTOR",
+        "proxy_symbol": "QQQ",
+        "state": "MIXED",
+        "absorption_score": -16.86540881842818,
+        "liquidity_impulse_component": 30.0,
+        "market_confirmation_component": -31.692295546444708,
+        "structural_component": -15.173113271983473,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "TREASURY_7_10Y",
+        "proxy_symbol": "IEF",
+        "state": "REJECTING",
+        "absorption_score": -25.430680329068345,
+        "liquidity_impulse_component": 8.0,
+        "market_confirmation_component": -17.781741827022895,
+        "structural_component": -15.64893850204545,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "GOLD",
+        "proxy_symbol": "GLD",
+        "state": "REJECTING",
+        "absorption_score": -31.19253909702971,
+        "liquidity_impulse_component": 18.0,
+        "market_confirmation_component": -39.78220215561055,
+        "structural_component": -9.410336941419162,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "TREASURY_20Y_PLUS",
+        "proxy_symbol": "TLT",
+        "state": "REJECTING",
+        "absorption_score": -41.42495203378488,
+        "liquidity_impulse_component": 8.0,
+        "market_confirmation_component": -28.553431008733234,
+        "structural_component": -20.871521025051646,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      }
+    ],
+    "asset_stances": [
+      {
+        "asset_id": "SPX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": 13.021521025051648,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "SPY_DELTA_1D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": 2.3172168200413186,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "QQQ_DELTA_1D_NEGATIVE",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": 9.225825230061979,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "IWM_DELTA_1D_NEGATIVE",
+          "IWM_SPY_WEAKENING",
+          "KRE_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": -16.067216820041317,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "IEF_DELTA_1D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": -20.567216820041324,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "TLT_DELTA_1D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": -6.408608410020659,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_1D_NEGATIVE",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": 8.539104971008314,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "SPY_DELTA_5D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -34.26208601520554,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "QQQ_DELTA_5D_NEGATIVE",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": 21.64116035070557,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING",
+          "IWM_SPY_IMPROVING",
+          "KRE_SPY_IMPROVING"
+        ],
+        "opposing_factors": [
+          "IWM_DELTA_5D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": -15.298232520137413,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "IEF_DELTA_5D_POSITIVE",
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": -23.029629510937546,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "TLT_DELTA_5D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -31.978221948123124,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_5D_NEGATIVE",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "REGIME_1_3M",
+        "stance": "BULLISH",
+        "direction_score": 36.86821302357017,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "SPY_DELTA_20D_POSITIVE",
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "REGIME_1_3M",
+        "stance": "NEUTRAL",
+        "direction_score": -13.339523258088024,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "QQQ_DELTA_20D_NEGATIVE",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "REGIME_1_3M",
+        "stance": "NEUTRAL",
+        "direction_score": -11.784510659432986,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING",
+          "KRE_SPY_IMPROVING"
+        ],
+        "opposing_factors": [
+          "IWM_DELTA_20D_NEGATIVE",
+          "IWM_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -27.09531321065483,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "IEF_DELTA_20D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -49.41337066619522,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "TLT_DELTA_20D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "REGIME_1_3M",
+        "stance": "NEUTRAL",
+        "direction_score": -23.39243508116385,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING",
+          "DOLLAR_WEAKER"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_20D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      }
+    ],
+    "main_drivers": [
+      "10Y_REAL_YIELD_HIGH_PERCENTILE",
+      "10Y_REAL_YIELD_RISING_20D",
+      "GOLD_WEAKNESS_CONFIRMS_REAL_RATE_PRESSURE",
+      "SMALL_CAP_TRANSMISSION_WEAK",
+      "FED_BALANCE_SHEET_EXPANDING",
+      "TGA_DRAWDOWN_INJECTS_LIQUIDITY",
+      "RRP_DRAWDOWN_RELEASES_LIQUIDITY",
+      "DOLLAR_WEAKER_SUPPORTS_LIQUIDITY"
+    ],
+    "confirming_signals": [
+      "CREDIT_SPREAD_CONTAINED",
+      "FED_BALANCE_SHEET_EXPANDING",
+      "TGA_DRAWDOWN_INJECTS_LIQUIDITY",
+      "RRP_DRAWDOWN_RELEASES_LIQUIDITY",
+      "DOLLAR_WEAKER_SUPPORTS_LIQUIDITY"
+    ],
+    "conflicting_signals": [
+      "CREDIT_SPREAD_CONTAINED"
+    ],
+    "quality_flags": [
+      "BROAD_DOLLAR_PROXY_NOT_ICE_DXY"
+    ],
+    "data_coverage": 0.9,
+    "confidence": 0.6680000000000001,
+    "stale_series": [],
+    "model_version": "macro-regime-v1.1.0"
+  },
+  "document": {
+    "document_id": "macro-risk/2026-07-17",
+    "as_of": "2026-07-17T23:59:00+00:00",
+    "valid_from": "2026-07-17T23:59:00+00:00",
+    "valid_until": "2026-07-18T23:59:00+00:00",
+    "status": "FINALIZED_DAILY",
+    "primary_regime": "RISK_ON_CONFIRMING",
+    "risk_state": "NORMAL",
+    "liquidity_state": "STRONGLY_EXPANDING",
+    "inflation_quadrant": "DISINFLATION_OR_GROWTH_SCARE",
+    "rate_pressure_state": "NEUTRAL",
+    "liquidity_source_flows": [
+      {
+        "source_id": "FED_BALANCE_SHEET",
+        "flow_billions_usd_20d": 7.383,
+        "direction": "INJECTION",
+        "observation_date": "2026-07-15T00:00:00+00:00",
+        "confidence": 0.8
+      },
+      {
+        "source_id": "TREASURY_GENERAL_ACCOUNT",
+        "flow_billions_usd_20d": 162.478,
+        "direction": "INJECTION",
+        "observation_date": "2026-07-15T00:00:00+00:00",
+        "confidence": 0.8
+      },
+      {
+        "source_id": "OVERNIGHT_REVERSE_REPO",
+        "flow_billions_usd_20d": 6.301,
+        "direction": "INJECTION",
+        "observation_date": "2026-07-16T00:00:00+00:00",
+        "confidence": 0.9
+      }
+    ],
+    "liquidity_target_flows": [
+      {
+        "target_id": "US_BANKS_CREDIT",
+        "proxy_symbol": "KRE",
+        "state": "ABSORBING",
+        "absorption_score": 50.5698986020421,
+        "liquidity_impulse_component": 28.000000000000004,
+        "market_confirmation_component": 30.776856551938806,
+        "structural_component": -8.206957949896703,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE",
+          "MARKET_ABSORPTION_CONFIRMED"
+        ],
+        "conflicting_signals": [
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "US_LARGE_CAP",
+        "proxy_symbol": "SPY",
+        "state": "MIXED",
+        "absorption_score": 16.74924162195688,
+        "liquidity_impulse_component": 30.0,
+        "market_confirmation_component": -5.759366788063778,
+        "structural_component": -7.49139158997934,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "RELATIVE_TRANSMISSION_WEAKENING"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "US_SMALL_CAP",
+        "proxy_symbol": "IWM",
+        "state": "MIXED",
+        "absorption_score": 1.0319470597028726,
+        "liquidity_impulse_component": 32.0,
+        "market_confirmation_component": -19.148182375369437,
+        "structural_component": -11.81987056492769,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "DOLLAR_CASH",
+        "proxy_symbol": "DTWEXBGS",
+        "state": "MIXED",
+        "absorption_score": -6.470126010375125,
+        "liquidity_impulse_component": -22.0,
+        "market_confirmation_component": -0.7899965753028148,
+        "structural_component": 16.31987056492769,
+        "confidence": 0.46666666666666673,
+        "supporting_signals": [
+          "MACRO_STRUCTURE_SUPPORTIVE"
+        ],
+        "conflicting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_NEGATIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "AI_SEMICONDUCTOR",
+        "proxy_symbol": "QQQ",
+        "state": "MIXED",
+        "absorption_score": -16.86540881842818,
+        "liquidity_impulse_component": 30.0,
+        "market_confirmation_component": -31.692295546444708,
+        "structural_component": -15.173113271983473,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "TREASURY_7_10Y",
+        "proxy_symbol": "IEF",
+        "state": "REJECTING",
+        "absorption_score": -25.430680329068345,
+        "liquidity_impulse_component": 8.0,
+        "market_confirmation_component": -17.781741827022895,
+        "structural_component": -15.64893850204545,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "GOLD",
+        "proxy_symbol": "GLD",
+        "state": "REJECTING",
+        "absorption_score": -31.19253909702971,
+        "liquidity_impulse_component": 18.0,
+        "market_confirmation_component": -39.78220215561055,
+        "structural_component": -9.410336941419162,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [
+          "SYSTEM_LIQUIDITY_IMPULSE_POSITIVE"
+        ],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      },
+      {
+        "target_id": "TREASURY_20Y_PLUS",
+        "proxy_symbol": "TLT",
+        "state": "REJECTING",
+        "absorption_score": -41.42495203378488,
+        "liquidity_impulse_component": 8.0,
+        "market_confirmation_component": -28.553431008733234,
+        "structural_component": -20.871521025051646,
+        "confidence": 0.6666666666666666,
+        "supporting_signals": [],
+        "conflicting_signals": [
+          "MARKET_ABSORPTION_NOT_CONFIRMED",
+          "RELATIVE_TRANSMISSION_WEAKENING",
+          "MACRO_STRUCTURE_RESTRICTIVE"
+        ],
+        "measurement_note": "Relative liquidity-transmission proxy; not audited ETF net fund flow."
+      }
+    ],
+    "asset_stances": [
+      {
+        "asset_id": "SPX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": 13.021521025051648,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "SPY_DELTA_1D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": 2.3172168200413186,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "QQQ_DELTA_1D_NEGATIVE",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": 9.225825230061979,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "IWM_DELTA_1D_NEGATIVE",
+          "IWM_SPY_WEAKENING",
+          "KRE_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": -16.067216820041317,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "IEF_DELTA_1D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": -20.567216820041324,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "TLT_DELTA_1D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "TACTICAL_1_5D",
+        "stance": "NEUTRAL",
+        "direction_score": -6.408608410020659,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_1D_NEGATIVE",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": 8.539104971008314,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "SPY_DELTA_5D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -34.26208601520554,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "QQQ_DELTA_5D_NEGATIVE",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": 21.64116035070557,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING",
+          "IWM_SPY_IMPROVING",
+          "KRE_SPY_IMPROVING"
+        ],
+        "opposing_factors": [
+          "IWM_DELTA_5D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": -15.298232520137413,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "IEF_DELTA_5D_POSITIVE",
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "SWING_1_4W",
+        "stance": "NEUTRAL",
+        "direction_score": -23.029629510937546,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "TLT_DELTA_5D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "SWING_1_4W",
+        "stance": "BEARISH",
+        "direction_score": -31.978221948123124,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_5D_NEGATIVE",
+          "DOLLAR_STRONGER"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "SPX",
+        "horizon": "REGIME_1_3M",
+        "stance": "BULLISH",
+        "direction_score": 36.86821302357017,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "SPY_DELTA_20D_POSITIVE",
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "NDX",
+        "horizon": "REGIME_1_3M",
+        "stance": "NEUTRAL",
+        "direction_score": -13.339523258088024,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "QQQ_DELTA_20D_NEGATIVE",
+          "SOXX_DIVERGENCE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "RUT",
+        "horizon": "REGIME_1_3M",
+        "stance": "NEUTRAL",
+        "direction_score": -11.784510659432986,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING",
+          "KRE_SPY_IMPROVING"
+        ],
+        "opposing_factors": [
+          "IWM_DELTA_20D_NEGATIVE",
+          "IWM_SPY_WEAKENING"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST10_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -27.09531321065483,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "IEF_DELTA_20D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "UST30_PRICE",
+        "horizon": "REGIME_1_3M",
+        "stance": "BEARISH",
+        "direction_score": -49.41337066619522,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING"
+        ],
+        "opposing_factors": [
+          "TLT_DELTA_20D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      },
+      {
+        "asset_id": "GLD",
+        "horizon": "REGIME_1_3M",
+        "stance": "NEUTRAL",
+        "direction_score": -23.39243508116385,
+        "confidence": 0.6666666666666666,
+        "supporting_factors": [
+          "LIQUIDITY_EXPANDING",
+          "DOLLAR_WEAKER"
+        ],
+        "opposing_factors": [
+          "GLD_DELTA_20D_NEGATIVE"
+        ],
+        "risk_triggers": [
+          "CREDIT_SPREAD_WIDENING",
+          "VIX_CURVE_BACKWARDATION"
+        ],
+        "invalidation_conditions": [
+          "DIRECTION_SCORE_CROSSES_NEUTRAL_BAND"
+        ],
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00"
+      }
+    ],
+    "main_drivers": [
+      "10Y_REAL_YIELD_HIGH_PERCENTILE",
+      "10Y_REAL_YIELD_RISING_20D",
+      "GOLD_WEAKNESS_CONFIRMS_REAL_RATE_PRESSURE",
+      "SMALL_CAP_TRANSMISSION_WEAK",
+      "FED_BALANCE_SHEET_EXPANDING",
+      "TGA_DRAWDOWN_INJECTS_LIQUIDITY",
+      "RRP_DRAWDOWN_RELEASES_LIQUIDITY",
+      "DOLLAR_WEAKER_SUPPORTS_LIQUIDITY"
+    ],
+    "confirming_signals": [
+      "CREDIT_SPREAD_CONTAINED",
+      "FED_BALANCE_SHEET_EXPANDING",
+      "TGA_DRAWDOWN_INJECTS_LIQUIDITY",
+      "RRP_DRAWDOWN_RELEASES_LIQUIDITY",
+      "DOLLAR_WEAKER_SUPPORTS_LIQUIDITY"
+    ],
+    "conflicting_signals": [
+      "CREDIT_SPREAD_CONTAINED"
+    ],
+    "risk_triggers": [
+      "CREDIT_SPREAD_WIDENING",
+      "VIX_BACKWARDATION",
+      "MOVE_SPIKE"
+    ],
+    "invalidation_conditions": [
+      "REGIME_STATE_CHANGES",
+      "DOCUMENT_EXPIRES",
+      "DATA_QUALITY_DEGRADES"
+    ],
+    "data_coverage": 0.9,
+    "confidence": 0.6680000000000001,
+    "stale_series": [],
+    "source_observation_ids": [
+      "BAMLC0A0CM/2026-07-15T00:00:00+00:00",
+      "DFII10/2026-07-15T00:00:00+00:00",
+      "DGS10/2026-07-15T00:00:00+00:00",
+      "DGS2/2026-07-15T00:00:00+00:00",
+      "DGS30/2026-07-15T00:00:00+00:00",
+      "DXY_PROXY/2026-07-10T00:00:00+00:00",
+      "GLD/2026-07-16T00:00:00+00:00",
+      "GLD_SPY/2026-07-16T00:00:00+00:00",
+      "IEF/2026-07-16T00:00:00+00:00",
+      "IEF_SPY/2026-07-16T00:00:00+00:00",
+      "IWM/2026-07-16T00:00:00+00:00",
+      "IWM_SPY/2026-07-16T00:00:00+00:00",
+      "KRE/2026-07-16T00:00:00+00:00",
+      "KRE_SPY/2026-07-16T00:00:00+00:00",
+      "QQQ/2026-07-16T00:00:00+00:00",
+      "QQQ_SPY/2026-07-16T00:00:00+00:00",
+      "RRPONTSYD/2026-07-16T00:00:00+00:00",
+      "SOXX/2026-07-16T00:00:00+00:00",
+      "SOXX_QQQ/2026-07-16T00:00:00+00:00",
+      "SPY/2026-07-16T00:00:00+00:00",
+      "T10YIE/2026-07-16T00:00:00+00:00",
+      "TLT/2026-07-16T00:00:00+00:00",
+      "TLT_SPY/2026-07-16T00:00:00+00:00",
+      "VIX/2026-07-16T00:00:00+00:00",
+      "VIX3M/2026-07-16T00:00:00+00:00",
+      "WALCL/2026-07-15T00:00:00+00:00",
+      "WTREGEN/2026-07-15T00:00:00+00:00"
+    ],
+    "created_at": "2026-07-17T23:59:00+00:00",
+    "updated_at": "2026-07-17T23:59:00+00:00",
+    "market_theme_states": [
+      {
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00",
+        "horizon": "FAST_1_5D",
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "dominant_label": "流动性选择性传导",
+        "summary": "系统流动性偏宽松，但不同资产吸收能力明显分化，不能等同于全面风险偏好。",
+        "confidence": 0.95,
+        "active_themes": [
+          {
+            "theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+            "label": "流动性选择性传导",
+            "family": "DIVERGENCE",
+            "horizon": "FAST_1_5D",
+            "priority": 62,
+            "confidence": 0.95,
+            "activation_strength": 1.0,
+            "confirmation_count": 3,
+            "confirmation_total": 3,
+            "persistence_periods": 7,
+            "data_coverage": 1.0,
+            "supporting_evidence": [
+              "LIQUIDITY_SCORE_AT_LEAST_20=+100.00",
+              "TARGET_ABSORPTION_DISPERSION_AT_LEAST_30=+91.99",
+              "AI_ABSORPTION_NEGATIVE=-16.87",
+              "BANKS_LEAD_AI_BY_15=+67.44",
+              "LARGE_CAP_LEADS_AI_BY_15=+33.61"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "LIQUIDITY_SCORE_BELOW_20",
+              "TARGET_DISPERSION_BELOW_20"
+            ],
+            "summary": "系统流动性偏宽松，但不同资产吸收能力明显分化，不能等同于全面风险偏好。"
+          }
+        ],
+        "strongest_signals": [
+          "SOXX=-2.51z",
+          "QQQ=-1.47z",
+          "KRE=+1.42z",
+          "DGS2=-1.03z",
+          "GLD=-0.84z"
+        ],
+        "no_dominant_reason": null,
+        "model_version": "market-theme-v1.0.0"
+      },
+      {
+        "as_of": "2026-07-17T23:59:00+00:00",
+        "valid_until": "2026-07-18T23:59:00+00:00",
+        "horizon": "REPRICING_14D",
+        "dominant_theme_id": "LIQUIDITY_ACCELERATION",
+        "dominant_label": "美元流动性加速扩张",
+        "summary": "14日系统美元流动性变化达到 +230.8bn。",
+        "confidence": 0.9,
+        "active_themes": [
+          {
+            "theme_id": "LIQUIDITY_ACCELERATION",
+            "label": "美元流动性加速扩张",
+            "family": "EASING_DEFENSIVE",
+            "horizon": "REPRICING_14D",
+            "priority": 68,
+            "confidence": 0.9,
+            "activation_strength": 1.0,
+            "confirmation_count": 0,
+            "confirmation_total": 1,
+            "persistence_periods": 1,
+            "data_coverage": 1.0,
+            "supporting_evidence": [
+              "NET_LIQUIDITY_CHANGE_14D=+230.8BN"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "NET_LIQUIDITY_CHANGE_REVERSES"
+            ],
+            "summary": "14日系统美元流动性变化达到 +230.8bn。"
+          },
+          {
+            "theme_id": "REAL_RATE_CONSTRAINT_REPRICING_DOWN",
+            "label": "真实利率约束缓和",
+            "family": "RATES_INFLATION",
+            "horizon": "REPRICING_14D",
+            "priority": 65,
+            "confidence": 0.9,
+            "activation_strength": 1.0,
+            "confirmation_count": 0,
+            "confirmation_total": 1,
+            "persistence_periods": 1,
+            "data_coverage": 1.0,
+            "supporting_evidence": [
+              "RATE_PRESSURE_CHANGE_14D=-15.0"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "RATE_PRESSURE_CHANGE_REVERSES"
+            ],
+            "summary": "14日真实利率压力分数变化 -15.0。"
+          },
+          {
+            "theme_id": "TARGET_ROTATION_14D",
+            "label": "跨资产吸收结构轮动",
+            "family": "DIVERGENCE",
+            "horizon": "REPRICING_14D",
+            "priority": 60,
+            "confidence": 0.9,
+            "activation_strength": 1.0,
+            "confirmation_count": 1,
+            "confirmation_total": 1,
+            "persistence_periods": 1,
+            "data_coverage": 1.0,
+            "supporting_evidence": [
+              "TARGET_ROTATION=US_BANKS_CREDIT",
+              "ABSORPTION_CHANGE=+60.2"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "LEADING_TARGET_CHANGE_RETURNS_INSIDE_10"
+            ],
+            "summary": "US_BANKS_CREDIT 的流动性吸收分数在14日内变化 +60.2。"
+          }
+        ],
+        "strongest_signals": [],
+        "no_dominant_reason": null,
+        "model_version": "market-theme-v1.0.0"
+      }
+    ],
+    "metadata": {
+      "model_version": "macro-regime-v1.1.0",
+      "snapshot_id": "macro/2026-07-17/1962e602abdf"
+    }
+  },
+  "history": [
+    {
+      "as_of": "2026-07-03T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-03/da2b7beb1a0f",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": -54.669000000000004,
+      "liquidity_score": -64.56714011361652,
+      "risk_score": 10.489814011361652,
+      "rate_pressure_score": 60.0,
+      "confidence": 0.6960000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.833,
+        "TREASURY_GENERAL_ACCOUNT": -52.115,
+        "OVERNIGHT_REVERSE_REPO": -1.7209999999999999
+      },
+      "target_absorption": {
+        "DOLLAR_CASH": 31.538409200363418,
+        "US_BANKS_CREDIT": -9.617613603751987,
+        "US_LARGE_CAP": -21.41521382514103,
+        "US_SMALL_CAP": -26.048614000283898,
+        "TREASURY_7_10Y": -36.45082385900652,
+        "GOLD": -41.73758383833727,
+        "AI_SEMICONDUCTOR": -50.42735648242359,
+        "TREASURY_20Y_PLUS": -51.1696994652911
+      },
+      "target_states": {
+        "DOLLAR_CASH": "ABSORBING",
+        "US_BANKS_CREDIT": "MIXED",
+        "US_LARGE_CAP": "REJECTING",
+        "US_SMALL_CAP": "REJECTING",
+        "TREASURY_7_10Y": "REJECTING",
+        "GOLD": "REJECTING",
+        "AI_SEMICONDUCTOR": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "TERM_PREMIUM_PRESSURE",
+      "active_theme_ids": [
+        "TERM_PREMIUM_PRESSURE",
+        "REAL_RATE_TIGHTENING",
+        "INFLATION_REPRICING"
+      ],
+      "theme_scores": {
+        "TERM_PREMIUM_PRESSURE": 0.9,
+        "REAL_RATE_TIGHTENING": 0.6666666666666666,
+        "INFLATION_REPRICING": 0.6166666666666667
+      }
+    },
+    {
+      "as_of": "2026-07-06T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-06/5cabc3122aab",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": -44.946,
+      "liquidity_score": -46.97222928825388,
+      "risk_score": 10.702622928825386,
+      "rate_pressure_score": 35.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.833,
+        "TREASURY_GENERAL_ACCOUNT": -52.115,
+        "OVERNIGHT_REVERSE_REPO": 8.002
+      },
+      "target_absorption": {
+        "DOLLAR_CASH": 22.20722046531884,
+        "US_BANKS_CREDIT": 4.126234764864301,
+        "US_SMALL_CAP": -9.42167344984856,
+        "TREASURY_7_10Y": -18.954842891472417,
+        "US_LARGE_CAP": -19.158780083835914,
+        "TREASURY_20Y_PLUS": -27.381571444622942,
+        "AI_SEMICONDUCTOR": -31.886766759975245,
+        "GOLD": -31.941848999423105
+      },
+      "target_states": {
+        "DOLLAR_CASH": "ABSORBING",
+        "US_BANKS_CREDIT": "MIXED",
+        "US_SMALL_CAP": "MIXED",
+        "TREASURY_7_10Y": "MIXED",
+        "US_LARGE_CAP": "MIXED",
+        "TREASURY_20Y_PLUS": "REJECTING",
+        "AI_SEMICONDUCTOR": "REJECTING",
+        "GOLD": "REJECTING"
+      },
+      "dominant_theme_id": null,
+      "active_theme_ids": [],
+      "theme_scores": {}
+    },
+    {
+      "as_of": "2026-07-07T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-07/19219f4dd904",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": -9.04,
+      "liquidity_score": -21.167775948992727,
+      "risk_score": 11.012777594899273,
+      "rate_pressure_score": 40.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -11.86,
+        "TREASURY_GENERAL_ACCOUNT": 0.476,
+        "OVERNIGHT_REVERSE_REPO": 2.3440000000000003
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 20.623072577994307,
+        "DOLLAR_CASH": 20.143209860483715,
+        "US_SMALL_CAP": -7.131515577242617,
+        "US_LARGE_CAP": -17.445826934876827,
+        "TREASURY_7_10Y": -24.692817421651597,
+        "GOLD": -41.62202361680522,
+        "TREASURY_20Y_PLUS": -43.21924033668569,
+        "AI_SEMICONDUCTOR": -43.98149313550064
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "DOLLAR_CASH": "ABSORBING",
+        "US_SMALL_CAP": "MIXED",
+        "US_LARGE_CAP": "MIXED",
+        "TREASURY_7_10Y": "REJECTING",
+        "GOLD": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING",
+        "AI_SEMICONDUCTOR": "REJECTING"
+      },
+      "dominant_theme_id": "TERM_PREMIUM_PRESSURE",
+      "active_theme_ids": [
+        "TERM_PREMIUM_PRESSURE",
+        "INFLATION_REPRICING"
+      ],
+      "theme_scores": {
+        "TERM_PREMIUM_PRESSURE": 0.9,
+        "INFLATION_REPRICING": 0.6166666666666667
+      }
+    },
+    {
+      "as_of": "2026-07-08T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-08/f254a09647d7",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": -14.48,
+      "liquidity_score": -17.957696065809614,
+      "risk_score": 11.37764285084269,
+      "rate_pressure_score": 70.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -11.86,
+        "TREASURY_GENERAL_ACCOUNT": 0.476,
+        "OVERNIGHT_REVERSE_REPO": -3.096
+      },
+      "target_absorption": {
+        "DOLLAR_CASH": 23.31724696692939,
+        "US_BANKS_CREDIT": -4.217881011917492,
+        "US_SMALL_CAP": -27.275800030297894,
+        "US_LARGE_CAP": -28.142854635617297,
+        "TREASURY_7_10Y": -38.45538621981585,
+        "GOLD": -48.50068967676893,
+        "AI_SEMICONDUCTOR": -55.96129662747465,
+        "TREASURY_20Y_PLUS": -61.834966204679276
+      },
+      "target_states": {
+        "DOLLAR_CASH": "ABSORBING",
+        "US_BANKS_CREDIT": "MIXED",
+        "US_SMALL_CAP": "REJECTING",
+        "US_LARGE_CAP": "REJECTING",
+        "TREASURY_7_10Y": "REJECTING",
+        "GOLD": "REJECTING",
+        "AI_SEMICONDUCTOR": "REJECTING",
+        "TREASURY_20Y_PLUS": "STRONG_REJECTION"
+      },
+      "dominant_theme_id": "REAL_RATE_TIGHTENING",
+      "active_theme_ids": [
+        "REAL_RATE_TIGHTENING",
+        "TERM_PREMIUM_PRESSURE"
+      ],
+      "theme_scores": {
+        "REAL_RATE_TIGHTENING": 0.9,
+        "TERM_PREMIUM_PRESSURE": 0.7833333333333333
+      }
+    },
+    {
+      "as_of": "2026-07-09T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-09/900010f8f181",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 100.315,
+      "liquidity_score": 93.89596647059108,
+      "risk_score": 10.410403352940891,
+      "rate_pressure_score": 60.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.815,
+        "TREASURY_GENERAL_ACCOUNT": 106.651,
+        "OVERNIGHT_REVERSE_REPO": -5.521
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 43.72305674561763,
+        "US_SMALL_CAP": 20.854052401112018,
+        "US_LARGE_CAP": 15.789664870126948,
+        "DOLLAR_CASH": -1.6625427344317139,
+        "AI_SEMICONDUCTOR": -7.023561302493256,
+        "GOLD": -18.952165535474595,
+        "TREASURY_7_10Y": -25.80732861295596,
+        "TREASURY_20Y_PLUS": -48.53483223097976
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_SMALL_CAP": "ABSORBING",
+        "US_LARGE_CAP": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "GOLD": "MIXED",
+        "TREASURY_7_10Y": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "TERM_PREMIUM_PRESSURE",
+        "REAL_RATE_TIGHTENING",
+        "LIQUIDITY_EASING_TRANSMISSION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.9,
+        "TERM_PREMIUM_PRESSURE": 0.9,
+        "REAL_RATE_TIGHTENING": 0.6666666666666666,
+        "LIQUIDITY_EASING_TRANSMISSION": 0.6416666666666666
+      }
+    },
+    {
+      "as_of": "2026-07-10T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-10/d750fe63db0a",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 105.542,
+      "liquidity_score": 97.03311909551657,
+      "risk_score": 10.396688090448343,
+      "rate_pressure_score": 85.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.815,
+        "TREASURY_GENERAL_ACCOUNT": 106.651,
+        "OVERNIGHT_REVERSE_REPO": -0.29400000000000004
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 49.84694646350697,
+        "US_LARGE_CAP": 16.577202854709473,
+        "US_SMALL_CAP": 13.240779226126334,
+        "DOLLAR_CASH": 0.29344511085268365,
+        "AI_SEMICONDUCTOR": -11.263877921429117,
+        "GOLD": -29.127217968569926,
+        "TREASURY_7_10Y": -39.22170260900758,
+        "TREASURY_20Y_PLUS": -64.4949668555218
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_LARGE_CAP": "MIXED",
+        "US_SMALL_CAP": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "GOLD": "REJECTING",
+        "TREASURY_7_10Y": "REJECTING",
+        "TREASURY_20Y_PLUS": "STRONG_REJECTION"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "REAL_RATE_TIGHTENING",
+        "LIQUIDITY_EASING_TRANSMISSION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.9,
+        "REAL_RATE_TIGHTENING": 0.6666666666666666,
+        "LIQUIDITY_EASING_TRANSMISSION": 0.6416666666666666
+      }
+    },
+    {
+      "as_of": "2026-07-13T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-13/6ad1df84401c",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 111.52499999999999,
+      "liquidity_score": 100,
+      "risk_score": 11.526972010551416,
+      "rate_pressure_score": 30.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.815,
+        "TREASURY_GENERAL_ACCOUNT": 106.651,
+        "OVERNIGHT_REVERSE_REPO": 5.689
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 44.80054180927422,
+        "US_LARGE_CAP": 24.888497833152016,
+        "US_SMALL_CAP": 13.989227816538154,
+        "AI_SEMICONDUCTOR": 1.6195867306715659,
+        "DOLLAR_CASH": -15.687042871076784,
+        "TREASURY_7_10Y": -16.650693456184808,
+        "GOLD": -20.40737913398209,
+        "TREASURY_20Y_PLUS": -31.446792531369688
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_LARGE_CAP": "ABSORBING",
+        "US_SMALL_CAP": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "TREASURY_7_10Y": "MIXED",
+        "GOLD": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.7833333333333333
+      }
+    },
+    {
+      "as_of": "2026-07-14T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-14/ec4c7e37b85b",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 148.85399999999998,
+      "liquidity_score": 100,
+      "risk_score": 20.28077940357179,
+      "rate_pressure_score": 35.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.036,
+        "TREASURY_GENERAL_ACCOUNT": 144.634,
+        "OVERNIGHT_REVERSE_REPO": 4.256
+      },
+      "target_absorption": {
+        "US_LARGE_CAP": 25.89259740813283,
+        "US_BANKS_CREDIT": 21.533898738011438,
+        "GOLD": 7.111949857564332,
+        "US_SMALL_CAP": 3.8102083682919314,
+        "AI_SEMICONDUCTOR": 0.586663414719899,
+        "DOLLAR_CASH": -10.798704539914752,
+        "TREASURY_7_10Y": -20.16221539885572,
+        "TREASURY_20Y_PLUS": -37.09764758942069
+      },
+      "target_states": {
+        "US_LARGE_CAP": "ABSORBING",
+        "US_BANKS_CREDIT": "ABSORBING",
+        "GOLD": "MIXED",
+        "US_SMALL_CAP": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "TREASURY_7_10Y": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.7833333333333333
+      }
+    },
+    {
+      "as_of": "2026-07-15T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-15/899e3eedd6c8",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 150.165,
+      "liquidity_score": 100,
+      "risk_score": 20.24459055692453,
+      "rate_pressure_score": 35.0,
+      "confidence": 0.7200000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": -0.036,
+        "TREASURY_GENERAL_ACCOUNT": 144.634,
+        "OVERNIGHT_REVERSE_REPO": 5.567
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 23.159068627599705,
+        "US_LARGE_CAP": 21.80171709798849,
+        "US_SMALL_CAP": 5.329422787933865,
+        "GOLD": 1.1347944891394892,
+        "AI_SEMICONDUCTOR": -4.999812623486672,
+        "DOLLAR_CASH": -9.052916912765092,
+        "TREASURY_7_10Y": -18.29725061880336,
+        "TREASURY_20Y_PLUS": -35.50125555103048
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_LARGE_CAP": "ABSORBING",
+        "US_SMALL_CAP": "MIXED",
+        "GOLD": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "TREASURY_7_10Y": "MIXED",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "INTERNAL_ROTATION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.9,
+        "INTERNAL_ROTATION": 0.6416666666666666
+      }
+    },
+    {
+      "as_of": "2026-07-16T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-16/1962e602abdf",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 176.162,
+      "liquidity_score": 100,
+      "risk_score": 20.913915899793405,
+      "rate_pressure_score": 45.0,
+      "confidence": 0.7000000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": 7.383,
+        "TREASURY_GENERAL_ACCOUNT": 162.478,
+        "OVERNIGHT_REVERSE_REPO": 6.301
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 50.5698986020421,
+        "US_LARGE_CAP": 16.74924162195688,
+        "US_SMALL_CAP": 1.0319470597028726,
+        "DOLLAR_CASH": -6.470126010375125,
+        "AI_SEMICONDUCTOR": -16.86540881842818,
+        "TREASURY_7_10Y": -25.430680329068345,
+        "GOLD": -31.19253909702971,
+        "TREASURY_20Y_PLUS": -41.42495203378488
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_LARGE_CAP": "MIXED",
+        "US_SMALL_CAP": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "TREASURY_7_10Y": "REJECTING",
+        "GOLD": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.9
+      }
+    },
+    {
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "snapshot_id": "macro/2026-07-17/1962e602abdf",
+      "model_version": "macro-regime-v1.1.0",
+      "net_liquidity_20d_bn": 176.162,
+      "liquidity_score": 100,
+      "risk_score": 20.913915899793405,
+      "rate_pressure_score": 45.0,
+      "confidence": 0.6680000000000001,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": 7.383,
+        "TREASURY_GENERAL_ACCOUNT": 162.478,
+        "OVERNIGHT_REVERSE_REPO": 6.301
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 50.5698986020421,
+        "US_LARGE_CAP": 16.74924162195688,
+        "US_SMALL_CAP": 1.0319470597028726,
+        "DOLLAR_CASH": -6.470126010375125,
+        "AI_SEMICONDUCTOR": -16.86540881842818,
+        "TREASURY_7_10Y": -25.430680329068345,
+        "GOLD": -31.19253909702971,
+        "TREASURY_20Y_PLUS": -41.42495203378488
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_LARGE_CAP": "MIXED",
+        "US_SMALL_CAP": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "TREASURY_7_10Y": "REJECTING",
+        "GOLD": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      },
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "active_theme_ids": [
+        "SELECTIVE_LIQUIDITY_TRANSMISSION"
+      ],
+      "theme_scores": {
+        "SELECTIVE_LIQUIDITY_TRANSMISSION": 0.9
+      }
+    }
+  ],
+  "change_events": [
+    {
+      "event_id": "macro-change/3cbcc2e17c114004",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "CROSS_ASSET_DIVERGENCE",
+      "entity_id": "AI_VS_LARGE_CAP",
+      "previous_value": -50.427,
+      "current_value": -16.865,
+      "magnitude": 33.61465044038506,
+      "direction": "AI_LAGGING",
+      "reason_codes": [
+        "LARGE_CAP_ABSORPTION_EXCEEDS_AI",
+        "POSSIBLE_AI_CAPEX_OR_DURATION_CONSTRAINT"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/e285a6d177e5cc04",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "MACRO_CONSTRAINT_SHIFT",
+      "entity_id": "REAL_RATE_PRESSURE",
+      "previous_value": 60.0,
+      "current_value": 45.0,
+      "magnitude": 15.0,
+      "direction": "FALLING",
+      "reason_codes": [
+        "REAL_RATE_PRESSURE_CHANGE_14D"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/4fb4823a9ebe4a83",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "MARKET_THEME_SHIFT",
+      "entity_id": "FAST_1_5D",
+      "previous_value": "TERM_PREMIUM_PRESSURE",
+      "current_value": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "magnitude": null,
+      "direction": "CHANGED",
+      "reason_codes": [
+        "DOMINANT_MARKET_THEME_CHANGED"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/30ee2cdfd4222dc8",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "SYSTEM_LIQUIDITY_SHIFT",
+      "entity_id": "NET_USD_LIQUIDITY",
+      "previous_value": -54.669,
+      "current_value": 176.162,
+      "magnitude": 230.83100000000002,
+      "direction": "EXPANDING",
+      "reason_codes": [
+        "NET_LIQUIDITY_CHANGE_14D",
+        "TGA_RRP_WALCL_DECOMPOSITION"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/b24a933e8afb75c5",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "TARGET_ROTATION",
+      "entity_id": "AI_SEMICONDUCTOR",
+      "previous_value": -50.427,
+      "current_value": -16.865,
+      "magnitude": 33.56194766399541,
+      "direction": "ABSORPTION_STRENGTHENING",
+      "reason_codes": [
+        "TARGET_ABSORPTION_CHANGE_14D",
+        "TARGET_STATE_CHANGED"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/3ab57eaddd714fad",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "TARGET_ROTATION",
+      "entity_id": "DOLLAR_CASH",
+      "previous_value": 31.538,
+      "current_value": -6.47,
+      "magnitude": 38.00853521073854,
+      "direction": "ABSORPTION_WEAKENING",
+      "reason_codes": [
+        "TARGET_ABSORPTION_CHANGE_14D",
+        "TARGET_STATE_CHANGED"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/ce7b6e4d9f28a8e8",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "TARGET_ROTATION",
+      "entity_id": "US_BANKS_CREDIT",
+      "previous_value": -9.618,
+      "current_value": 50.57,
+      "magnitude": 60.18751220579409,
+      "direction": "ABSORPTION_STRENGTHENING",
+      "reason_codes": [
+        "TARGET_ABSORPTION_CHANGE_14D",
+        "TARGET_STATE_CHANGED"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/b08519fd59903dd1",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "TARGET_ROTATION",
+      "entity_id": "US_LARGE_CAP",
+      "previous_value": -21.415,
+      "current_value": 16.749,
+      "magnitude": 38.16445544709791,
+      "direction": "ABSORPTION_STRENGTHENING",
+      "reason_codes": [
+        "TARGET_ABSORPTION_CHANGE_14D",
+        "TARGET_STATE_CHANGED"
+      ],
+      "needs_kimi_analysis": true
+    },
+    {
+      "event_id": "macro-change/57387c4832b15b3d",
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "window_start": "2026-07-03T23:59:00+00:00",
+      "window_days": 14,
+      "event_type": "TARGET_ROTATION",
+      "entity_id": "US_SMALL_CAP",
+      "previous_value": -26.049,
+      "current_value": 1.032,
+      "magnitude": 27.08056105998677,
+      "direction": "ABSORPTION_STRENGTHENING",
+      "reason_codes": [
+        "TARGET_ABSORPTION_CHANGE_14D",
+        "TARGET_STATE_CHANGED"
+      ],
+      "needs_kimi_analysis": true
+    }
+  ],
+  "analysis_packet": {
+    "packet_id": "macro-packet/68341c2ce391bfd1",
+    "as_of": "2026-07-17T23:59:00+00:00",
+    "window_start": "2026-07-03T23:59:00+00:00",
+    "window_days": 14,
+    "model_version": "macro-regime-v1.1.0",
+    "current_snapshot_id": "macro/2026-07-17/1962e602abdf",
+    "current_state": {
+      "net_liquidity_20d_bn": 176.162,
+      "liquidity_score": 100,
+      "risk_score": 20.91,
+      "rate_pressure_score": 45.0,
+      "source_flows_bn": {
+        "FED_BALANCE_SHEET": 7.383,
+        "TREASURY_GENERAL_ACCOUNT": 162.478,
+        "OVERNIGHT_REVERSE_REPO": 6.301
+      },
+      "target_absorption": {
+        "US_BANKS_CREDIT": 50.57,
+        "US_LARGE_CAP": 16.75,
+        "US_SMALL_CAP": 1.03,
+        "DOLLAR_CASH": -6.47,
+        "AI_SEMICONDUCTOR": -16.87,
+        "TREASURY_7_10Y": -25.43,
+        "GOLD": -31.19,
+        "TREASURY_20Y_PLUS": -41.42
+      },
+      "target_states": {
+        "US_BANKS_CREDIT": "ABSORBING",
+        "US_LARGE_CAP": "MIXED",
+        "US_SMALL_CAP": "MIXED",
+        "DOLLAR_CASH": "MIXED",
+        "AI_SEMICONDUCTOR": "MIXED",
+        "TREASURY_7_10Y": "REJECTING",
+        "GOLD": "REJECTING",
+        "TREASURY_20Y_PLUS": "REJECTING"
+      }
+    },
+    "window_change": {
+      "net_liquidity_change_bn": 230.831,
+      "risk_score_change": 10.424,
+      "rate_pressure_change": -15.0,
+      "target_absorption_change": {
+        "US_BANKS_CREDIT": 60.188,
+        "US_LARGE_CAP": 38.164,
+        "US_SMALL_CAP": 27.081,
+        "DOLLAR_CASH": -38.009,
+        "AI_SEMICONDUCTOR": 33.562,
+        "TREASURY_7_10Y": 11.02,
+        "GOLD": 10.545,
+        "TREASURY_20Y_PLUS": 9.745
+      }
+    },
+    "daily_history": [
+      {
+        "date": "2026-07-03",
+        "net_liquidity_20d_bn": -54.669,
+        "liquidity_score": -64.57,
+        "risk_score": 10.49,
+        "rate_pressure_score": 60.0,
+        "target_absorption": {
+          "DOLLAR_CASH": 31.54,
+          "US_BANKS_CREDIT": -9.62,
+          "US_LARGE_CAP": -21.42,
+          "US_SMALL_CAP": -26.05,
+          "TREASURY_7_10Y": -36.45,
+          "GOLD": -41.74,
+          "AI_SEMICONDUCTOR": -50.43,
+          "TREASURY_20Y_PLUS": -51.17
+        },
+        "dominant_theme_id": "TERM_PREMIUM_PRESSURE",
+        "active_theme_ids": [
+          "TERM_PREMIUM_PRESSURE",
+          "REAL_RATE_TIGHTENING",
+          "INFLATION_REPRICING"
+        ]
+      },
+      {
+        "date": "2026-07-06",
+        "net_liquidity_20d_bn": -44.946,
+        "liquidity_score": -46.97,
+        "risk_score": 10.7,
+        "rate_pressure_score": 35.0,
+        "target_absorption": {
+          "DOLLAR_CASH": 22.21,
+          "US_BANKS_CREDIT": 4.13,
+          "US_SMALL_CAP": -9.42,
+          "TREASURY_7_10Y": -18.95,
+          "US_LARGE_CAP": -19.16,
+          "TREASURY_20Y_PLUS": -27.38,
+          "AI_SEMICONDUCTOR": -31.89,
+          "GOLD": -31.94
+        },
+        "dominant_theme_id": null,
+        "active_theme_ids": []
+      },
+      {
+        "date": "2026-07-07",
+        "net_liquidity_20d_bn": -9.04,
+        "liquidity_score": -21.17,
+        "risk_score": 11.01,
+        "rate_pressure_score": 40.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 20.62,
+          "DOLLAR_CASH": 20.14,
+          "US_SMALL_CAP": -7.13,
+          "US_LARGE_CAP": -17.45,
+          "TREASURY_7_10Y": -24.69,
+          "GOLD": -41.62,
+          "TREASURY_20Y_PLUS": -43.22,
+          "AI_SEMICONDUCTOR": -43.98
+        },
+        "dominant_theme_id": "TERM_PREMIUM_PRESSURE",
+        "active_theme_ids": [
+          "TERM_PREMIUM_PRESSURE",
+          "INFLATION_REPRICING"
+        ]
+      },
+      {
+        "date": "2026-07-08",
+        "net_liquidity_20d_bn": -14.48,
+        "liquidity_score": -17.96,
+        "risk_score": 11.38,
+        "rate_pressure_score": 70.0,
+        "target_absorption": {
+          "DOLLAR_CASH": 23.32,
+          "US_BANKS_CREDIT": -4.22,
+          "US_SMALL_CAP": -27.28,
+          "US_LARGE_CAP": -28.14,
+          "TREASURY_7_10Y": -38.46,
+          "GOLD": -48.5,
+          "AI_SEMICONDUCTOR": -55.96,
+          "TREASURY_20Y_PLUS": -61.83
+        },
+        "dominant_theme_id": "REAL_RATE_TIGHTENING",
+        "active_theme_ids": [
+          "REAL_RATE_TIGHTENING",
+          "TERM_PREMIUM_PRESSURE"
+        ]
+      },
+      {
+        "date": "2026-07-09",
+        "net_liquidity_20d_bn": 100.315,
+        "liquidity_score": 93.9,
+        "risk_score": 10.41,
+        "rate_pressure_score": 60.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 43.72,
+          "US_SMALL_CAP": 20.85,
+          "US_LARGE_CAP": 15.79,
+          "DOLLAR_CASH": -1.66,
+          "AI_SEMICONDUCTOR": -7.02,
+          "GOLD": -18.95,
+          "TREASURY_7_10Y": -25.81,
+          "TREASURY_20Y_PLUS": -48.53
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION",
+          "TERM_PREMIUM_PRESSURE",
+          "REAL_RATE_TIGHTENING",
+          "LIQUIDITY_EASING_TRANSMISSION"
+        ]
+      },
+      {
+        "date": "2026-07-10",
+        "net_liquidity_20d_bn": 105.542,
+        "liquidity_score": 97.03,
+        "risk_score": 10.4,
+        "rate_pressure_score": 85.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 49.85,
+          "US_LARGE_CAP": 16.58,
+          "US_SMALL_CAP": 13.24,
+          "DOLLAR_CASH": 0.29,
+          "AI_SEMICONDUCTOR": -11.26,
+          "GOLD": -29.13,
+          "TREASURY_7_10Y": -39.22,
+          "TREASURY_20Y_PLUS": -64.49
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION",
+          "REAL_RATE_TIGHTENING",
+          "LIQUIDITY_EASING_TRANSMISSION"
+        ]
+      },
+      {
+        "date": "2026-07-13",
+        "net_liquidity_20d_bn": 111.525,
+        "liquidity_score": 100,
+        "risk_score": 11.53,
+        "rate_pressure_score": 30.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 44.8,
+          "US_LARGE_CAP": 24.89,
+          "US_SMALL_CAP": 13.99,
+          "AI_SEMICONDUCTOR": 1.62,
+          "DOLLAR_CASH": -15.69,
+          "TREASURY_7_10Y": -16.65,
+          "GOLD": -20.41,
+          "TREASURY_20Y_PLUS": -31.45
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION"
+        ]
+      },
+      {
+        "date": "2026-07-14",
+        "net_liquidity_20d_bn": 148.854,
+        "liquidity_score": 100,
+        "risk_score": 20.28,
+        "rate_pressure_score": 35.0,
+        "target_absorption": {
+          "US_LARGE_CAP": 25.89,
+          "US_BANKS_CREDIT": 21.53,
+          "GOLD": 7.11,
+          "US_SMALL_CAP": 3.81,
+          "AI_SEMICONDUCTOR": 0.59,
+          "DOLLAR_CASH": -10.8,
+          "TREASURY_7_10Y": -20.16,
+          "TREASURY_20Y_PLUS": -37.1
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION"
+        ]
+      },
+      {
+        "date": "2026-07-15",
+        "net_liquidity_20d_bn": 150.165,
+        "liquidity_score": 100,
+        "risk_score": 20.24,
+        "rate_pressure_score": 35.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 23.16,
+          "US_LARGE_CAP": 21.8,
+          "US_SMALL_CAP": 5.33,
+          "GOLD": 1.13,
+          "AI_SEMICONDUCTOR": -5.0,
+          "DOLLAR_CASH": -9.05,
+          "TREASURY_7_10Y": -18.3,
+          "TREASURY_20Y_PLUS": -35.5
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION",
+          "INTERNAL_ROTATION"
+        ]
+      },
+      {
+        "date": "2026-07-16",
+        "net_liquidity_20d_bn": 176.162,
+        "liquidity_score": 100,
+        "risk_score": 20.91,
+        "rate_pressure_score": 45.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 50.57,
+          "US_LARGE_CAP": 16.75,
+          "US_SMALL_CAP": 1.03,
+          "DOLLAR_CASH": -6.47,
+          "AI_SEMICONDUCTOR": -16.87,
+          "TREASURY_7_10Y": -25.43,
+          "GOLD": -31.19,
+          "TREASURY_20Y_PLUS": -41.42
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION"
+        ]
+      },
+      {
+        "date": "2026-07-17",
+        "net_liquidity_20d_bn": 176.162,
+        "liquidity_score": 100,
+        "risk_score": 20.91,
+        "rate_pressure_score": 45.0,
+        "target_absorption": {
+          "US_BANKS_CREDIT": 50.57,
+          "US_LARGE_CAP": 16.75,
+          "US_SMALL_CAP": 1.03,
+          "DOLLAR_CASH": -6.47,
+          "AI_SEMICONDUCTOR": -16.87,
+          "TREASURY_7_10Y": -25.43,
+          "GOLD": -31.19,
+          "TREASURY_20Y_PLUS": -41.42
+        },
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "active_theme_ids": [
+          "SELECTIVE_LIQUIDITY_TRANSMISSION"
+        ]
+      }
+    ],
+    "change_events": [
+      {
+        "event_id": "macro-change/3cbcc2e17c114004",
+        "event_type": "CROSS_ASSET_DIVERGENCE",
+        "entity_id": "AI_VS_LARGE_CAP",
+        "previous_value": -50.427,
+        "current_value": -16.865,
+        "magnitude": 33.61465044038506,
+        "direction": "AI_LAGGING",
+        "reason_codes": [
+          "LARGE_CAP_ABSORPTION_EXCEEDS_AI",
+          "POSSIBLE_AI_CAPEX_OR_DURATION_CONSTRAINT"
+        ]
+      },
+      {
+        "event_id": "macro-change/e285a6d177e5cc04",
+        "event_type": "MACRO_CONSTRAINT_SHIFT",
+        "entity_id": "REAL_RATE_PRESSURE",
+        "previous_value": 60.0,
+        "current_value": 45.0,
+        "magnitude": 15.0,
+        "direction": "FALLING",
+        "reason_codes": [
+          "REAL_RATE_PRESSURE_CHANGE_14D"
+        ]
+      },
+      {
+        "event_id": "macro-change/4fb4823a9ebe4a83",
+        "event_type": "MARKET_THEME_SHIFT",
+        "entity_id": "FAST_1_5D",
+        "previous_value": "TERM_PREMIUM_PRESSURE",
+        "current_value": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "magnitude": null,
+        "direction": "CHANGED",
+        "reason_codes": [
+          "DOMINANT_MARKET_THEME_CHANGED"
+        ]
+      },
+      {
+        "event_id": "macro-change/30ee2cdfd4222dc8",
+        "event_type": "SYSTEM_LIQUIDITY_SHIFT",
+        "entity_id": "NET_USD_LIQUIDITY",
+        "previous_value": -54.669,
+        "current_value": 176.162,
+        "magnitude": 230.83100000000002,
+        "direction": "EXPANDING",
+        "reason_codes": [
+          "NET_LIQUIDITY_CHANGE_14D",
+          "TGA_RRP_WALCL_DECOMPOSITION"
+        ]
+      },
+      {
+        "event_id": "macro-change/b24a933e8afb75c5",
+        "event_type": "TARGET_ROTATION",
+        "entity_id": "AI_SEMICONDUCTOR",
+        "previous_value": -50.427,
+        "current_value": -16.865,
+        "magnitude": 33.56194766399541,
+        "direction": "ABSORPTION_STRENGTHENING",
+        "reason_codes": [
+          "TARGET_ABSORPTION_CHANGE_14D",
+          "TARGET_STATE_CHANGED"
+        ]
+      },
+      {
+        "event_id": "macro-change/3ab57eaddd714fad",
+        "event_type": "TARGET_ROTATION",
+        "entity_id": "DOLLAR_CASH",
+        "previous_value": 31.538,
+        "current_value": -6.47,
+        "magnitude": 38.00853521073854,
+        "direction": "ABSORPTION_WEAKENING",
+        "reason_codes": [
+          "TARGET_ABSORPTION_CHANGE_14D",
+          "TARGET_STATE_CHANGED"
+        ]
+      },
+      {
+        "event_id": "macro-change/ce7b6e4d9f28a8e8",
+        "event_type": "TARGET_ROTATION",
+        "entity_id": "US_BANKS_CREDIT",
+        "previous_value": -9.618,
+        "current_value": 50.57,
+        "magnitude": 60.18751220579409,
+        "direction": "ABSORPTION_STRENGTHENING",
+        "reason_codes": [
+          "TARGET_ABSORPTION_CHANGE_14D",
+          "TARGET_STATE_CHANGED"
+        ]
+      },
+      {
+        "event_id": "macro-change/b08519fd59903dd1",
+        "event_type": "TARGET_ROTATION",
+        "entity_id": "US_LARGE_CAP",
+        "previous_value": -21.415,
+        "current_value": 16.749,
+        "magnitude": 38.16445544709791,
+        "direction": "ABSORPTION_STRENGTHENING",
+        "reason_codes": [
+          "TARGET_ABSORPTION_CHANGE_14D",
+          "TARGET_STATE_CHANGED"
+        ]
+      },
+      {
+        "event_id": "macro-change/57387c4832b15b3d",
+        "event_type": "TARGET_ROTATION",
+        "entity_id": "US_SMALL_CAP",
+        "previous_value": -26.049,
+        "current_value": 1.032,
+        "magnitude": 27.08056105998677,
+        "direction": "ABSORPTION_STRENGTHENING",
+        "reason_codes": [
+          "TARGET_ABSORPTION_CHANGE_14D",
+          "TARGET_STATE_CHANGED"
+        ]
+      }
+    ],
+    "candidate_risk_types": [
+      "AI_CAPEX_CROWDING_OUT",
+      "CREDIT_STRESS",
+      "FISCAL_OR_TREASURY_SUPPLY",
+      "GEOPOLITICAL_OR_COMMODITY",
+      "GROWTH_SLOWDOWN",
+      "INFLATION_REPRICING",
+      "INSUFFICIENT_EVIDENCE",
+      "LIQUIDITY_PLUMBING",
+      "MONETARY_POLICY_REPRICING",
+      "POSITIONING_UNWIND"
+    ],
+    "data_quality": {
+      "current_confidence": 0.668,
+      "minimum_window_confidence": 0.668,
+      "history_points": 11
+    },
+    "market_themes": [
+      {
+        "horizon": "FAST_1_5D",
+        "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+        "dominant_label": "流动性选择性传导",
+        "summary": "系统流动性偏宽松，但不同资产吸收能力明显分化，不能等同于全面风险偏好。",
+        "confidence": 0.95,
+        "active_themes": [
+          {
+            "theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+            "confidence": 0.95,
+            "supporting_evidence": [
+              "LIQUIDITY_SCORE_AT_LEAST_20=+100.00",
+              "TARGET_ABSORPTION_DISPERSION_AT_LEAST_30=+91.99",
+              "AI_ABSORPTION_NEGATIVE=-16.87",
+              "BANKS_LEAD_AI_BY_15=+67.44",
+              "LARGE_CAP_LEADS_AI_BY_15=+33.61"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "LIQUIDITY_SCORE_BELOW_20",
+              "TARGET_DISPERSION_BELOW_20"
+            ]
+          }
+        ]
+      },
+      {
+        "horizon": "REPRICING_14D",
+        "dominant_theme_id": "LIQUIDITY_ACCELERATION",
+        "dominant_label": "美元流动性加速扩张",
+        "summary": "14日系统美元流动性变化达到 +230.8bn。",
+        "confidence": 0.9,
+        "active_themes": [
+          {
+            "theme_id": "LIQUIDITY_ACCELERATION",
+            "confidence": 0.9,
+            "supporting_evidence": [
+              "NET_LIQUIDITY_CHANGE_14D=+230.8BN"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "NET_LIQUIDITY_CHANGE_REVERSES"
+            ]
+          },
+          {
+            "theme_id": "REAL_RATE_CONSTRAINT_REPRICING_DOWN",
+            "confidence": 0.9,
+            "supporting_evidence": [
+              "RATE_PRESSURE_CHANGE_14D=-15.0"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "RATE_PRESSURE_CHANGE_REVERSES"
+            ]
+          },
+          {
+            "theme_id": "TARGET_ROTATION_14D",
+            "confidence": 0.9,
+            "supporting_evidence": [
+              "TARGET_ROTATION=US_BANKS_CREDIT",
+              "ABSORPTION_CHANGE=+60.2"
+            ],
+            "conflicting_evidence": [],
+            "invalidation_conditions": [
+              "LEADING_TARGET_CHANGE_RETURNS_INSIDE_10"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "market_theme_states": [
+    {
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "valid_until": "2026-07-18T23:59:00+00:00",
+      "horizon": "FAST_1_5D",
+      "dominant_theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+      "dominant_label": "流动性选择性传导",
+      "summary": "系统流动性偏宽松，但不同资产吸收能力明显分化，不能等同于全面风险偏好。",
+      "confidence": 0.95,
+      "active_themes": [
+        {
+          "theme_id": "SELECTIVE_LIQUIDITY_TRANSMISSION",
+          "label": "流动性选择性传导",
+          "family": "DIVERGENCE",
+          "horizon": "FAST_1_5D",
+          "priority": 62,
+          "confidence": 0.95,
+          "activation_strength": 1.0,
+          "confirmation_count": 3,
+          "confirmation_total": 3,
+          "persistence_periods": 7,
+          "data_coverage": 1.0,
+          "supporting_evidence": [
+            "LIQUIDITY_SCORE_AT_LEAST_20=+100.00",
+            "TARGET_ABSORPTION_DISPERSION_AT_LEAST_30=+91.99",
+            "AI_ABSORPTION_NEGATIVE=-16.87",
+            "BANKS_LEAD_AI_BY_15=+67.44",
+            "LARGE_CAP_LEADS_AI_BY_15=+33.61"
+          ],
+          "conflicting_evidence": [],
+          "invalidation_conditions": [
+            "LIQUIDITY_SCORE_BELOW_20",
+            "TARGET_DISPERSION_BELOW_20"
+          ],
+          "summary": "系统流动性偏宽松，但不同资产吸收能力明显分化，不能等同于全面风险偏好。"
+        }
+      ],
+      "strongest_signals": [
+        "SOXX=-2.51z",
+        "QQQ=-1.47z",
+        "KRE=+1.42z",
+        "DGS2=-1.03z",
+        "GLD=-0.84z"
+      ],
+      "no_dominant_reason": null,
+      "model_version": "market-theme-v1.0.0"
+    },
+    {
+      "as_of": "2026-07-17T23:59:00+00:00",
+      "valid_until": "2026-07-18T23:59:00+00:00",
+      "horizon": "REPRICING_14D",
+      "dominant_theme_id": "LIQUIDITY_ACCELERATION",
+      "dominant_label": "美元流动性加速扩张",
+      "summary": "14日系统美元流动性变化达到 +230.8bn。",
+      "confidence": 0.9,
+      "active_themes": [
+        {
+          "theme_id": "LIQUIDITY_ACCELERATION",
+          "label": "美元流动性加速扩张",
+          "family": "EASING_DEFENSIVE",
+          "horizon": "REPRICING_14D",
+          "priority": 68,
+          "confidence": 0.9,
+          "activation_strength": 1.0,
+          "confirmation_count": 0,
+          "confirmation_total": 1,
+          "persistence_periods": 1,
+          "data_coverage": 1.0,
+          "supporting_evidence": [
+            "NET_LIQUIDITY_CHANGE_14D=+230.8BN"
+          ],
+          "conflicting_evidence": [],
+          "invalidation_conditions": [
+            "NET_LIQUIDITY_CHANGE_REVERSES"
+          ],
+          "summary": "14日系统美元流动性变化达到 +230.8bn。"
+        },
+        {
+          "theme_id": "REAL_RATE_CONSTRAINT_REPRICING_DOWN",
+          "label": "真实利率约束缓和",
+          "family": "RATES_INFLATION",
+          "horizon": "REPRICING_14D",
+          "priority": 65,
+          "confidence": 0.9,
+          "activation_strength": 1.0,
+          "confirmation_count": 0,
+          "confirmation_total": 1,
+          "persistence_periods": 1,
+          "data_coverage": 1.0,
+          "supporting_evidence": [
+            "RATE_PRESSURE_CHANGE_14D=-15.0"
+          ],
+          "conflicting_evidence": [],
+          "invalidation_conditions": [
+            "RATE_PRESSURE_CHANGE_REVERSES"
+          ],
+          "summary": "14日真实利率压力分数变化 -15.0。"
+        },
+        {
+          "theme_id": "TARGET_ROTATION_14D",
+          "label": "跨资产吸收结构轮动",
+          "family": "DIVERGENCE",
+          "horizon": "REPRICING_14D",
+          "priority": 60,
+          "confidence": 0.9,
+          "activation_strength": 1.0,
+          "confirmation_count": 1,
+          "confirmation_total": 1,
+          "persistence_periods": 1,
+          "data_coverage": 1.0,
+          "supporting_evidence": [
+            "TARGET_ROTATION=US_BANKS_CREDIT",
+            "ABSORPTION_CHANGE=+60.2"
+          ],
+          "conflicting_evidence": [],
+          "invalidation_conditions": [
+            "LEADING_TARGET_CHANGE_RETURNS_INSIDE_10"
+          ],
+          "summary": "US_BANKS_CREDIT 的流动性吸收分数在14日内变化 +60.2。"
+        }
+      ],
+      "strongest_signals": [],
+      "no_dominant_reason": null,
+      "model_version": "market-theme-v1.0.0"
+    }
+  ],
+  "kimi_inference": null
+}

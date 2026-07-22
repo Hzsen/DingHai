@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from domain.macro_history import MacroAnalysisPacket, MacroChangeEvent, MacroHistoryPoint
+from domain.market_theme import MarketThemeState
 
 
-PROMPT_VERSION = "macro-pricing-inference-v1.0.0"
+PROMPT_VERSION = "macro-pricing-inference-v1.1.0"
 ALLOWED_RISK_TYPES = {
     "MONETARY_POLICY_REPRICING",
     "INFLATION_REPRICING",
@@ -49,11 +50,19 @@ def _safe_context(value: str) -> str:
 def build_macro_analysis_packet(
     points: list[MacroHistoryPoint],
     events: list[MacroChangeEvent],
+    market_theme_states: tuple[MarketThemeState, ...] = (),
 ) -> MacroAnalysisPacket:
     if len(points) < 2:
         raise ValueError("at least two history points are required")
     first, current = points[0], points[-1]
-    material = f"{current.snapshot_id}|{first.as_of.isoformat()}|{','.join(event.event_id for event in events)}"
+    theme_material = ",".join(
+        f"{state.horizon.value}:{state.dominant_theme_id or 'NONE'}:{state.confidence:.3f}"
+        for state in market_theme_states
+    )
+    material = (
+        f"{current.snapshot_id}|{first.as_of.isoformat()}|"
+        f"{','.join(event.event_id for event in events)}|{theme_material}"
+    )
     packet_id = "macro-packet/" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
     target_change = {
         target: round(current.target_absorption[target] - first.target_absorption.get(target, 0.0), 3)
@@ -66,6 +75,8 @@ def build_macro_analysis_packet(
         "risk_score": round(point.risk_score, 2),
         "rate_pressure_score": round(point.rate_pressure_score, 2),
         "target_absorption": {key: round(value, 2) for key, value in point.target_absorption.items()},
+        "dominant_theme_id": point.dominant_theme_id,
+        "active_theme_ids": list(point.active_theme_ids),
     } for point in points)
     compact_events = tuple({
         "event_id": event.event_id,
@@ -107,6 +118,20 @@ def build_macro_analysis_packet(
             "minimum_window_confidence": round(min(point.confidence for point in points), 3),
             "history_points": len(points),
         },
+        market_themes=tuple({
+            "horizon": state.horizon.value,
+            "dominant_theme_id": state.dominant_theme_id,
+            "dominant_label": state.dominant_label,
+            "summary": state.summary,
+            "confidence": round(state.confidence, 3),
+            "active_themes": [{
+                "theme_id": item.theme_id,
+                "confidence": round(item.confidence, 3),
+                "supporting_evidence": list(item.supporting_evidence),
+                "conflicting_evidence": list(item.conflicting_evidence),
+                "invalidation_conditions": list(item.invalidation_conditions),
+            } for item in state.active_themes],
+        } for state in market_theme_states),
     )
 
 
@@ -138,6 +163,7 @@ def build_macro_pricing_prompt(
         "你是全球宏观资金流研究分析器。只分析提供的14日 point-in-time packet 和最多3条 context。"
         "任务是提出市场可能正在计价的事件或风险假设，而不是断言因果。只能输出合法 JSON object。"
         "必须区分系统流动性 source flow、资产 transmission proxy 和 inference。"
+        "market_themes 是确定性规则分类，只能解释或质疑其证据，不得静默改写 theme_id。"
         "不得修改 numeric evidence，不得提供投资建议，不得预测价格，不得补充 context 中不存在的具体新闻事实。"
         "每个假设必须引用 packet 中的 event_id/reason_code/metric 名称，同时列出反证和失效条件。"
         "证据不足时 risk_type 必须为 INSUFFICIENT_EVIDENCE。"

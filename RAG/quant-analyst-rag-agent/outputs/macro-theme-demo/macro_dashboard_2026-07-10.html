@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liquidity Transmission 2026-07-10</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#17202a;--card:#fff;--muted:#5f6b76;--border:#d9dee5;--positive:#177245;--negative:#a63a3a;--neutral:#6b7280;--track:#dce2e8}
+@media(prefers-color-scheme:dark){:root{--bg:#11151a;--fg:#edf1f5;--card:#1b2128;--muted:#a9b2bc;--border:#36404b;--positive:#57c78a;--negative:#ef8585;--neutral:#a9b2bc;--track:#36404b}}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;overflow-x:hidden;overflow-wrap:anywhere}
+main{width:100%;max-width:1180px;margin:auto;padding:24px;overflow:hidden} h1,h2{font-weight:500} h2{margin-top:26px} .meta,small{color:var(--muted)} small{display:block}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0} .layers{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;min-width:0} .value{font-size:20px;font-weight:500;margin-top:6px;overflow-wrap:anywhere}
+.flow-row{display:grid;grid-template-columns:190px 1fr 90px;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.target-row{display:grid;grid-template-columns:190px 1fr 150px;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+.signed-track{height:10px;background:var(--track);position:relative} .signed-track:after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted)}
+.signed-track span{display:block;position:absolute;top:0;height:100%} .signed-track .positive{background:var(--positive)} .signed-track .negative{background:var(--negative)}
+.number,.target-state{text-align:right} .positive{color:var(--positive)} .negative{color:var(--negative)} .target-state span{display:block;font-size:20px}
+.evidence-line{grid-column:2/4;display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.evidence{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px} ul{padding-left:18px} .warning{color:var(--negative)} .note{margin:10px 0;color:var(--muted)}
+.range-label{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:4px} .trend-chart{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.trend-chart svg,.spark-row svg{width:100%;height:auto} .trend-chart polyline,.spark-row polyline{fill:none;stroke-width:3;vector-effect:non-scaling-stroke} .net-line,.target-positive{stroke:var(--positive)} .target-negative,.risk-line{stroke:var(--negative)} .rate-line{stroke:var(--neutral)} .zero{stroke:var(--border);stroke-width:1}
+.legend{grid-column:2;display:flex;gap:18px;color:var(--muted)} .spark-row{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.kimi-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px} .pending{margin-top:8px} h3{font-weight:500}
+.theme-tabs,.theme-candidates{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0} .theme-tab,.theme-choice{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer}
+.theme-tab[aria-pressed="true"],.theme-choice[aria-pressed="true"]{background:var(--fg);color:var(--bg)} .theme-detail{margin-top:10px} .theme-detail-head{display:flex;justify-content:space-between;gap:18px;align-items:start} .theme-detail-head>div:last-child{text-align:right} .theme-evidence{margin-top:12px}
+@media(max-width:760px){main{padding:12px} .summary,.layers{grid-template-columns:1fr} .flow-row,.target-row,.trend-chart,.spark-row{grid-template-columns:1fr} .flow-row>*,.target-row>*,.trend-chart>*,.spark-row>*{min-width:0} .number,.target-state{text-align:left} .evidence-line{grid-column:auto} .evidence,.kimi-grid{grid-template-columns:1fr} .legend{grid-column:1} .theme-detail-head{display:block} .theme-detail-head>div:last-child{text-align:left;margin-top:8px}}
+</style></head><body><main>
+<h1>Liquidity Transmission</h1><div class="meta">As of 2026-07-10T20:00:00+00:00 · valid until 2026-07-11T20:00:00+00:00 · coverage 100% · confidence 80%</div>
+<div class="note">Source flows are balance-sheet changes in USD. Target scores are relative absorption proxies, not audited ETF fund flows.</div>
+<h2>Three-layer market view</h2><section class="summary layers" aria-label="slow fast and explanation layers">
+<div class="card"><small>Slow layer · weeks to months</small><div class="value">LONG_DURATION_PRESSURE</div><p>Risk NORMAL · liquidity CONTRACTING · real-rate EXTREME_PRESSURE</p></div>
+<div class="card"><small>Fast layer · 1–5D</small><div class="value">真实利率约束增强</div><p>真实利率正在上升，长久期资产面临更强的折现率约束。</p></div>
+<div class="card"><small>Explanation layer · RAG / LLM</small><div class="value">Pending deterministic trigger</div><p>Uses deterministic theme evidence, retrieved research and policy context; it does not recalculate market signals.</p></div>
+</section>
+<h2>Market theme evidence explorer</h2><div class="theme-tabs" aria-label="theme horizon"><button type="button" class="theme-tab" data-theme-state="0" aria-pressed="true">1–5D fast theme</button></div><div id="theme-candidate-list" class="theme-candidates" aria-label="active themes"></div><section class="card theme-detail" aria-live="polite"><div class="theme-detail-head"><div><small id="theme-family"></small><div id="theme-label" class="value"></div></div><div><strong id="theme-confidence"></strong><small id="theme-confirmation"></small></div></div><p id="theme-summary"></p><div class="evidence theme-evidence"><div><h3>Supporting evidence</h3><ul id="theme-support"></ul></div><div><h3>Conflicts & invalidation</h3><ul id="theme-conflict"></ul><ul id="theme-invalidation"></ul></div></div></section>
+<section class="summary" aria-label="liquidity summary">
+<div class="card"><div>20D system impulse</div><div class="value">-25.0bn</div><small>WALCL − TGA − RRP</small></div>
+<div class="card"><div>Liquidity state</div><div class="value">CONTRACTING</div><small>score -42</small></div>
+<div class="card"><div>Risk transmission</div><div class="value">NORMAL</div><small>32/100</small></div>
+<div class="card"><div>Real-rate constraint</div><div class="value">EXTREME_PRESSURE</div><small>95/100</small></div>
+</section>
+
+<h2>Where system liquidity came from</h2><section aria-label="source flow decomposition"><div class="flow-row"><div><strong>Fed balance sheet</strong><small>2026-07-10</small></div><div class="signed-track" aria-label="+10.0 billion US dollars"><span class="positive" style="left:50%;width:12.5%"></span></div><div class="number positive">+10.0bn</div></div><div class="flow-row"><div><strong>TGA</strong><small>2026-07-10</small></div><div class="signed-track" aria-label="-40.0 billion US dollars"><span class="negative" style="right:50%;width:50.0%"></span></div><div class="number negative">-40.0bn</div></div><div class="flow-row"><div><strong>RRP</strong><small>2026-07-10</small></div><div class="signed-track" aria-label="+5.0 billion US dollars"><span class="positive" style="left:50%;width:6.2%"></span></div><div class="number positive">+5.0bn</div></div></section>
+<h2>Where liquidity is being absorbed</h2><section aria-label="target liquidity absorption"><div class="target-row"><div class="target-name"><strong>Dollar / cash</strong><small>DTWEXBGS · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score +44"><span class="positive" style="left:50%;width:22.0%"></span></div><small>Liq +9.2 · confirmation +4.5 · structure +30.3</small></div><div class="target-state positive"><strong>ABSORBING</strong><span>+44.0</span></div><div class="evidence-line"><span>Support: MACRO_STRUCTURE_SUPPORTIVE</span><span>Conflict: no material conflict</span></div></div><div class="target-row"><div class="target-name"><strong>US large cap</strong><small>SPY · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score -34"><span class="negative" style="right:50%;width:16.9%"></span></div><small>Liq -12.5 · confirmation -6.6 · structure -14.6</small></div><div class="target-state negative"><strong>REJECTING</strong><span>-33.7</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: SYSTEM_LIQUIDITY_IMPULSE_NEGATIVE, MACRO_STRUCTURE_RESTRICTIVE</span></div></div><div class="target-row"><div class="target-name"><strong>Banks / credit</strong><small>KRE · confidence 44%</small></div><div><div class="signed-track" aria-label="absorption score -40"><span class="negative" style="right:50%;width:19.9%"></span></div><small>Liq -11.7 · confirmation -16.7 · structure -11.4</small></div><div class="target-state negative"><strong>REJECTING</strong><span>-39.8</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: SYSTEM_LIQUIDITY_IMPULSE_NEGATIVE, MARKET_ABSORPTION_NOT_CONFIRMED, RELATIVE_TRANSMISSION_WEAKENING, MACRO_STRUCTURE_RESTRICTIVE</span></div></div><div class="target-row"><div class="target-name"><strong>Treasury 7–10Y</strong><small>IEF · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score -51"><span class="negative" style="right:50%;width:25.4%"></span></div><small>Liq -3.3 · confirmation -11.8 · structure -35.6</small></div><div class="target-state negative"><strong>REJECTING</strong><span>-50.7</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: MARKET_ABSORPTION_NOT_CONFIRMED, MACRO_STRUCTURE_RESTRICTIVE</span></div></div><div class="target-row"><div class="target-name"><strong>US small cap</strong><small>IWM · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score -55"><span class="negative" style="right:50%;width:27.4%"></span></div><small>Liq -13.3 · confirmation -20.6 · structure -20.8</small></div><div class="target-state negative"><strong>REJECTING</strong><span>-54.8</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: SYSTEM_LIQUIDITY_IMPULSE_NEGATIVE, MARKET_ABSORPTION_NOT_CONFIRMED, RELATIVE_TRANSMISSION_WEAKENING, MACRO_STRUCTURE_RESTRICTIVE</span></div></div><div class="target-row"><div class="target-name"><strong>AI / semiconductors</strong><small>QQQ · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score -71"><span class="negative" style="right:50%;width:35.4%"></span></div><small>Liq -12.5 · confirmation -27.3 · structure -31.1</small></div><div class="target-state negative"><strong>STRONG_REJECTION</strong><span>-70.9</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: SYSTEM_LIQUIDITY_IMPULSE_NEGATIVE, MARKET_ABSORPTION_NOT_CONFIRMED, RELATIVE_TRANSMISSION_WEAKENING, MACRO_STRUCTURE_RESTRICTIVE</span></div></div><div class="target-row"><div class="target-name"><strong>Treasury 20Y+</strong><small>TLT · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score -72"><span class="negative" style="right:50%;width:36.0%"></span></div><small>Liq -3.3 · confirmation -21.6 · structure -47.0</small></div><div class="target-state negative"><strong>STRONG_REJECTION</strong><span>-72.0</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: MARKET_ABSORPTION_NOT_CONFIRMED, MACRO_STRUCTURE_RESTRICTIVE</span></div></div><div class="target-row"><div class="target-name"><strong>Gold</strong><small>GLD · confidence 100%</small></div><div><div class="signed-track" aria-label="absorption score -72"><span class="negative" style="right:50%;width:36.2%"></span></div><small>Liq -7.5 · confirmation -31.9 · structure -33.0</small></div><div class="target-state negative"><strong>STRONG_REJECTION</strong><span>-72.4</span></div><div class="evidence-line"><span>Support: no positive confirmation</span><span>Conflict: MARKET_ABSORPTION_NOT_CONFIRMED, MACRO_STRUCTURE_RESTRICTIVE</span></div></div></section>
+<h2>Kimi pricing hypothesis</h2><section class="card pending"><strong>Analysis not generated for this packet.</strong><small>0 deterministic trigger(s) detected.</small><ul><li>No material trigger</li></ul></section>
+<section class="evidence"><div class="card"><h2>Main drivers</h2><ul><li>10Y_REAL_YIELD_HIGH_PERCENTILE</li><li>10Y_REAL_YIELD_RISING_5D</li><li>10Y_REAL_YIELD_RISING_20D</li><li>REAL_YIELD_CHANGE_STATISTICALLY_LARGE</li><li>10Y_NOMINAL_RISING</li><li>LONG_END_TERM_PRESSURE</li><li>GOLD_WEAKNESS_CONFIRMS_REAL_RATE_PRESSURE</li><li>SMALL_CAP_TRANSMISSION_WEAK</li><li>BANK_TRANSMISSION_WEAK</li><li>FED_BALANCE_SHEET_EXPANDING</li><li>RRP_DRAWDOWN_RELEASES_LIQUIDITY</li></ul></div><div class="card"><h2>Conflicts & quality</h2><ul><li>CREDIT_SPREAD_CONTAINED</li><li>TGA_REBUILD_DRAINS_LIQUIDITY</li><li>DOLLAR_STRENGTH_TIGHTENS</li></ul><div class="warning">Quality flags: ASYNCHRONOUS_RATE_DECOMPOSITION<br>Stale series: none</div></div></section>
+</main><script>
+const themeStates = [{"as_of": "2026-07-10T20:00:00+00:00", "valid_until": "2026-07-11T20:00:00+00:00", "horizon": "FAST_1_5D", "dominant_theme_id": "REAL_RATE_TIGHTENING", "dominant_label": "真实利率约束增强", "summary": "真实利率正在上升，长久期资产面临更强的折现率约束。", "confidence": 0.5916666666666667, "active_themes": [{"theme_id": "REAL_RATE_TIGHTENING", "label": "真实利率约束增强", "family": "RATES_INFLATION", "horizon": "FAST_1_5D", "priority": 60, "confidence": 0.5916666666666667, "activation_strength": 1.0, "confirmation_count": 1, "confirmation_total": 3, "persistence_periods": 1, "data_coverage": 0.5, "supporting_evidence": ["RATE_PRESSURE_SCORE_AT_LEAST_60=+95.00", "DFII10_5D_Z_AT_LEAST_0_5=+0.78", "DGS10_5D_Z_POSITIVE=+0.72"], "conflicting_evidence": [], "invalidation_conditions": ["DFII10_5D_Z_BELOW_0_25", "RATE_PRESSURE_SCORE_BELOW_50"], "summary": "真实利率正在上升，长久期资产面临更强的折现率约束。"}], "strongest_signals": ["DGS30=+1.04z", "DFII10=+0.78z", "DGS10=+0.72z"], "no_dominant_reason": null, "model_version": "market-theme-v1.0.0"}];
+const candidateList = document.getElementById('theme-candidate-list');
+const putList = (id, values, prefix) => {
+  const node = document.getElementById(id);
+  node.replaceChildren();
+  const items = values && values.length ? values : ['None'];
+  items.forEach(value => {
+    const li = document.createElement('li');
+    li.textContent = prefix + value;
+    node.appendChild(li);
+  });
+};
+const renderCandidate = (stateIndex, candidateIndex) => {
+  const state = themeStates[stateIndex];
+  const item = state.active_themes[candidateIndex];
+  document.querySelectorAll('.theme-choice').forEach((button, index) => button.setAttribute('aria-pressed', String(index === candidateIndex)));
+  document.getElementById('theme-family').textContent = item ? item.family + ' · ' + item.horizon : state.horizon;
+  document.getElementById('theme-label').textContent = item ? item.label : state.dominant_label;
+  document.getElementById('theme-confidence').textContent = Math.round((item ? item.confidence : state.confidence) * 100) + '% confidence';
+  document.getElementById('theme-confirmation').textContent = item ? item.confirmation_count + '/' + item.confirmation_total + ' confirmations · ' + item.persistence_periods + ' periods' : (state.no_dominant_reason || 'No active theme');
+  document.getElementById('theme-summary').textContent = item ? item.summary : state.summary;
+  putList('theme-support', item ? item.supporting_evidence : state.strongest_signals, '');
+  putList('theme-conflict', item ? item.conflicting_evidence : [], 'Conflict: ');
+  putList('theme-invalidation', item ? item.invalidation_conditions : [], 'Invalidation: ');
+};
+const renderState = stateIndex => {
+  const state = themeStates[stateIndex];
+  document.querySelectorAll('.theme-tab').forEach((button, index) => button.setAttribute('aria-pressed', String(index === stateIndex)));
+  candidateList.replaceChildren();
+  const themes = state.active_themes.length ? state.active_themes : [{label: state.dominant_label}];
+  themes.forEach((item, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'theme-choice';
+    button.textContent = item.label;
+    button.setAttribute('aria-pressed', String(index === 0));
+    button.addEventListener('click', () => renderCandidate(stateIndex, index));
+    candidateList.appendChild(button);
+  });
+  renderCandidate(stateIndex, 0);
+};
+document.querySelectorAll('.theme-tab').forEach((button, index) => button.addEventListener('click', () => renderState(index)));
+renderState(0);
+</script></body></html>

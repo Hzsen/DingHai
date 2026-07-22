@@ -8,6 +8,7 @@ from pathlib import Path
 
 from domain.macro import MacroRiskDocument, MacroSnapshot
 from domain.macro_history import MacroAnalysisPacket, MacroChangeEvent, MacroHistoryPoint
+from domain.market_theme import MarketThemeState, ThemeHorizon
 from quant_agent.macro.document import document_to_dict
 
 
@@ -61,9 +62,11 @@ def render_macro_markdown(
     history_points: list[MacroHistoryPoint] | None = None,
     change_events: list[MacroChangeEvent] | None = None,
     kimi_inference: dict | None = None,
+    market_theme_states: tuple[MarketThemeState, ...] | None = None,
 ) -> str:
     history_points = history_points or []
     change_events = change_events or []
+    market_theme_states = market_theme_states or ()
     net_flow = sum(item.flow_billions_usd_20d for item in snapshot.liquidity_source_flows)
     lines = [
         f"# Liquidity Transmission — {snapshot.as_of.date().isoformat()}", "",
@@ -75,10 +78,39 @@ def render_macro_markdown(
         f"- 20D source impulse: `{net_flow:+.1f}bn USD`",
         f"- Real-rate pressure: `{snapshot.rate_pressure_state.value}` ({snapshot.rate_pressure_score:.0f}/100)",
         f"- Confidence: {snapshot.confidence:.0%}; coverage: {snapshot.data_coverage:.0%}", "",
+    ]
+    for state in market_theme_states:
+        horizon_label = "Fast Market Theme (1–5D)" if state.horizon is ThemeHorizon.FAST else "Repricing Theme (14D)"
+        lines.extend([
+            f"## {horizon_label}", "",
+            f"- Dominant: `{state.dominant_theme_id or 'NONE'}` — {state.dominant_label}",
+            f"- Confidence: {state.confidence:.0%}",
+            f"- Interpretation: {state.summary}",
+            f"- Strongest signals: {', '.join(state.strongest_signals) or '-'}", "",
+        ])
+        if state.active_themes:
+            lines.extend([
+                "| Theme | Family | Confidence | Confirmations | Persistence |",
+                "|---|---|---:|---:|---:|",
+            ])
+            for theme in state.active_themes:
+                lines.append(
+                    f"| {theme.label} (`{theme.theme_id}`) | {theme.family.value} | {theme.confidence:.0%} | "
+                    f"{theme.confirmation_count}/{theme.confirmation_total} | {theme.persistence_periods} |"
+                )
+            dominant = state.active_themes[0]
+            lines.extend([
+                "", f"- Supporting evidence: {', '.join(dominant.supporting_evidence) or '-'}",
+                f"- Conflicting evidence: {', '.join(dominant.conflicting_evidence) or '-'}",
+                f"- Invalidation: {', '.join(dominant.invalidation_conditions) or '-'}", "",
+            ])
+        else:
+            lines.extend([f"- No-theme reason: `{state.no_dominant_reason or 'UNKNOWN'}`", ""])
+    lines.extend([
         "## Source Decomposition", "",
         "| Source | 20D liquidity contribution | Direction | Observation |",
         "|---|---:|---|---|",
-    ]
+    ])
     for flow in snapshot.liquidity_source_flows:
         lines.append(
             f"| {FLOW_LABELS.get(flow.source_id, flow.source_id)} | {_format_billions(flow.flow_billions_usd_20d)} | "
@@ -130,9 +162,11 @@ def render_macro_dashboard(
     history_points: list[MacroHistoryPoint] | None = None,
     change_events: list[MacroChangeEvent] | None = None,
     kimi_inference: dict | None = None,
+    market_theme_states: tuple[MarketThemeState, ...] | None = None,
 ) -> str:
     history_points = history_points or []
     change_events = change_events or []
+    market_theme_states = market_theme_states or ()
     net_flow = sum(item.flow_billions_usd_20d for item in snapshot.liquidity_source_flows)
     source_max = max((abs(item.flow_billions_usd_20d) for item in snapshot.liquidity_source_flows), default=1.0)
     source_rows: list[str] = []
@@ -167,6 +201,77 @@ def render_macro_dashboard(
     conflicts = "".join(f"<li>{html.escape(item)}</li>" for item in snapshot.conflicting_signals) or "<li>None</li>"
     stale = ", ".join(snapshot.stale_series) or "none"
     quality = ", ".join(snapshot.quality_flags) or "none"
+    fast_theme = next((state for state in market_theme_states if state.horizon is ThemeHorizon.FAST), None)
+    repricing_theme = next((state for state in market_theme_states if state.horizon is ThemeHorizon.REPRICING), None)
+    llm_label = "Pending deterministic trigger"
+    if kimi_inference:
+        llm_label = str(kimi_inference.get("dominant_pricing_hypothesis", {}).get("risk_type", "UNKNOWN"))
+    theme_state_payload = _serialize_snapshot(market_theme_states)
+    horizon_buttons = "".join(
+        f'<button type="button" class="theme-tab" data-theme-state="{index}" aria-pressed="{str(index == 0).lower()}">'
+        f'{"1–5D fast theme" if state.horizon is ThemeHorizon.FAST else "14D repricing"}</button>'
+        for index, state in enumerate(market_theme_states)
+    )
+    theme_explorer = ""
+    theme_script = ""
+    if market_theme_states:
+        theme_explorer = (
+            '<h2>Market theme evidence explorer</h2>'
+            f'<div class="theme-tabs" aria-label="theme horizon">{horizon_buttons}</div>'
+            '<div id="theme-candidate-list" class="theme-candidates" aria-label="active themes"></div>'
+            '<section class="card theme-detail" aria-live="polite">'
+            '<div class="theme-detail-head"><div><small id="theme-family"></small><div id="theme-label" class="value"></div></div>'
+            '<div><strong id="theme-confidence"></strong><small id="theme-confirmation"></small></div></div>'
+            '<p id="theme-summary"></p><div class="evidence theme-evidence">'
+            '<div><h3>Supporting evidence</h3><ul id="theme-support"></ul></div>'
+            '<div><h3>Conflicts & invalidation</h3><ul id="theme-conflict"></ul><ul id="theme-invalidation"></ul></div>'
+            '</div></section>'
+        )
+        theme_script = """<script>
+const themeStates = %s;
+const candidateList = document.getElementById('theme-candidate-list');
+const putList = (id, values, prefix) => {
+  const node = document.getElementById(id);
+  node.replaceChildren();
+  const items = values && values.length ? values : ['None'];
+  items.forEach(value => {
+    const li = document.createElement('li');
+    li.textContent = prefix + value;
+    node.appendChild(li);
+  });
+};
+const renderCandidate = (stateIndex, candidateIndex) => {
+  const state = themeStates[stateIndex];
+  const item = state.active_themes[candidateIndex];
+  document.querySelectorAll('.theme-choice').forEach((button, index) => button.setAttribute('aria-pressed', String(index === candidateIndex)));
+  document.getElementById('theme-family').textContent = item ? item.family + ' · ' + item.horizon : state.horizon;
+  document.getElementById('theme-label').textContent = item ? item.label : state.dominant_label;
+  document.getElementById('theme-confidence').textContent = Math.round((item ? item.confidence : state.confidence) * 100) + '%% confidence';
+  document.getElementById('theme-confirmation').textContent = item ? item.confirmation_count + '/' + item.confirmation_total + ' confirmations · ' + item.persistence_periods + ' periods' : (state.no_dominant_reason || 'No active theme');
+  document.getElementById('theme-summary').textContent = item ? item.summary : state.summary;
+  putList('theme-support', item ? item.supporting_evidence : state.strongest_signals, '');
+  putList('theme-conflict', item ? item.conflicting_evidence : [], 'Conflict: ');
+  putList('theme-invalidation', item ? item.invalidation_conditions : [], 'Invalidation: ');
+};
+const renderState = stateIndex => {
+  const state = themeStates[stateIndex];
+  document.querySelectorAll('.theme-tab').forEach((button, index) => button.setAttribute('aria-pressed', String(index === stateIndex)));
+  candidateList.replaceChildren();
+  const themes = state.active_themes.length ? state.active_themes : [{label: state.dominant_label}];
+  themes.forEach((item, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'theme-choice';
+    button.textContent = item.label;
+    button.setAttribute('aria-pressed', String(index === 0));
+    button.addEventListener('click', () => renderCandidate(stateIndex, index));
+    candidateList.appendChild(button);
+  });
+  renderCandidate(stateIndex, 0);
+};
+document.querySelectorAll('.theme-tab').forEach((button, index) => button.addEventListener('click', () => renderState(index)));
+renderState(0);
+</script>""" % json.dumps(theme_state_payload, ensure_ascii=False).replace("</", "<\\/")
     history_section = ""
     if history_points:
         width, height = 920, 105
@@ -226,7 +331,7 @@ def render_macro_dashboard(
 @media(prefers-color-scheme:dark){{:root{{--bg:#11151a;--fg:#edf1f5;--card:#1b2128;--muted:#a9b2bc;--border:#36404b;--positive:#57c78a;--negative:#ef8585;--neutral:#a9b2bc;--track:#36404b}}}}
 *{{box-sizing:border-box}} body{{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;overflow-x:hidden;overflow-wrap:anywhere}}
 main{{width:100%;max-width:1180px;margin:auto;padding:24px;overflow:hidden}} h1,h2{{font-weight:500}} h2{{margin-top:26px}} .meta,small{{color:var(--muted)}} small{{display:block}}
-.summary{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}}
+.summary{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}} .layers{{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .card{{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;min-width:0}} .value{{font-size:20px;font-weight:500;margin-top:6px;overflow-wrap:anywhere}}
 .flow-row{{display:grid;grid-template-columns:190px 1fr 90px;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}}
 .target-row{{display:grid;grid-template-columns:190px 1fr 150px;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}}
@@ -239,10 +344,18 @@ main{{width:100%;max-width:1180px;margin:auto;padding:24px;overflow:hidden}} h1,
 .trend-chart svg,.spark-row svg{{width:100%;height:auto}} .trend-chart polyline,.spark-row polyline{{fill:none;stroke-width:3;vector-effect:non-scaling-stroke}} .net-line,.target-positive{{stroke:var(--positive)}} .target-negative,.risk-line{{stroke:var(--negative)}} .rate-line{{stroke:var(--neutral)}} .zero{{stroke:var(--border);stroke-width:1}}
 .legend{{grid-column:2;display:flex;gap:18px;color:var(--muted)}} .spark-row{{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}}
 .kimi-grid{{display:grid;grid-template-columns:1fr 1fr;gap:16px}} .pending{{margin-top:8px}} h3{{font-weight:500}}
-@media(max-width:760px){{main{{padding:12px}} .summary{{grid-template-columns:1fr}} .flow-row,.target-row,.trend-chart,.spark-row{{grid-template-columns:1fr}} .flow-row>*,.target-row>*,.trend-chart>*,.spark-row>*{{min-width:0}} .number,.target-state{{text-align:left}} .evidence-line{{grid-column:auto}} .evidence,.kimi-grid{{grid-template-columns:1fr}} .legend{{grid-column:1}}}}
+.theme-tabs,.theme-candidates{{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}} .theme-tab,.theme-choice{{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer}}
+.theme-tab[aria-pressed="true"],.theme-choice[aria-pressed="true"]{{background:var(--fg);color:var(--bg)}} .theme-detail{{margin-top:10px}} .theme-detail-head{{display:flex;justify-content:space-between;gap:18px;align-items:start}} .theme-detail-head>div:last-child{{text-align:right}} .theme-evidence{{margin-top:12px}}
+@media(max-width:760px){{main{{padding:12px}} .summary,.layers{{grid-template-columns:1fr}} .flow-row,.target-row,.trend-chart,.spark-row{{grid-template-columns:1fr}} .flow-row>*,.target-row>*,.trend-chart>*,.spark-row>*{{min-width:0}} .number,.target-state{{text-align:left}} .evidence-line{{grid-column:auto}} .evidence,.kimi-grid{{grid-template-columns:1fr}} .legend{{grid-column:1}} .theme-detail-head{{display:block}} .theme-detail-head>div:last-child{{text-align:left;margin-top:8px}}}}
 </style></head><body><main>
 <h1>Liquidity Transmission</h1><div class="meta">As of {snapshot.as_of.isoformat()} · valid until {snapshot.valid_until.isoformat()} · coverage {snapshot.data_coverage:.0%} · confidence {snapshot.confidence:.0%}</div>
 <div class="note">Source flows are balance-sheet changes in USD. Target scores are relative absorption proxies, not audited ETF fund flows.</div>
+<h2>Three-layer market view</h2><section class="summary layers" aria-label="slow fast and explanation layers">
+<div class="card"><small>Slow layer · weeks to months</small><div class="value">{html.escape(snapshot.primary_regime.value)}</div><p>Risk {html.escape(snapshot.risk_state.value)} · liquidity {html.escape(snapshot.liquidity_state.value)} · real-rate {html.escape(snapshot.rate_pressure_state.value)}</p></div>
+<div class="card"><small>Fast layer · 1–5D{f' / 14D {repricing_theme.dominant_label}' if repricing_theme else ''}</small><div class="value">{html.escape(fast_theme.dominant_label if fast_theme else 'Not evaluated')}</div><p>{html.escape(fast_theme.summary if fast_theme else 'No market-theme state was supplied.')}</p></div>
+<div class="card"><small>Explanation layer · RAG / LLM</small><div class="value">{html.escape(llm_label)}</div><p>Uses deterministic theme evidence, retrieved research and policy context; it does not recalculate market signals.</p></div>
+</section>
+{theme_explorer}
 <section class="summary" aria-label="liquidity summary">
 <div class="card"><div>20D system impulse</div><div class="value">{net_flow:+.1f}bn</div><small>WALCL − TGA − RRP</small></div>
 <div class="card"><div>Liquidity state</div><div class="value">{html.escape(snapshot.liquidity_state.value)}</div><small>score {snapshot.liquidity_score:+.0f}</small></div>
@@ -254,7 +367,7 @@ main{{width:100%;max-width:1180px;margin:auto;padding:24px;overflow:hidden}} h1,
 <h2>Where liquidity is being absorbed</h2><section aria-label="target liquidity absorption">{''.join(target_rows)}</section>
 {kimi_section}
 <section class="evidence"><div class="card"><h2>Main drivers</h2><ul>{drivers}</ul></div><div class="card"><h2>Conflicts & quality</h2><ul>{conflicts}</ul><div class="warning">Quality flags: {html.escape(quality)}<br>Stale series: {html.escape(stale)}</div></div></section>
-</main></body></html>"""
+</main>{theme_script}</body></html>"""
 
 
 def publish_macro_outputs(
@@ -265,6 +378,7 @@ def publish_macro_outputs(
     change_events: list[MacroChangeEvent] | None = None,
     kimi_inference: dict | None = None,
     analysis_packet: MacroAnalysisPacket | None = None,
+    market_theme_states: tuple[MarketThemeState, ...] | None = None,
 ) -> dict[str, Path]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -278,10 +392,17 @@ def publish_macro_outputs(
         "snapshot": _serialize_snapshot(snapshot), "document": document_to_dict(document),
         "history": _serialize_snapshot(history_points), "change_events": _serialize_snapshot(change_events),
         "analysis_packet": _serialize_snapshot(analysis_packet) if analysis_packet else None,
+        "market_theme_states": _serialize_snapshot(market_theme_states or ()),
         "kimi_inference": kimi_inference,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
-    markdown_path.write_text(render_macro_markdown(snapshot, history_points, change_events, kimi_inference), encoding="utf-8")
-    html_path.write_text(render_macro_dashboard(snapshot, history_points, change_events, kimi_inference), encoding="utf-8")
+    markdown_path.write_text(
+        render_macro_markdown(snapshot, history_points, change_events, kimi_inference, market_theme_states),
+        encoding="utf-8",
+    )
+    html_path.write_text(
+        render_macro_dashboard(snapshot, history_points, change_events, kimi_inference, market_theme_states),
+        encoding="utf-8",
+    )
     paths = {"json": json_path, "markdown": markdown_path, "html": html_path}
     if analysis_packet is not None:
         packet_path = output_dir / f"macro_analysis_packet_{suffix}.json"

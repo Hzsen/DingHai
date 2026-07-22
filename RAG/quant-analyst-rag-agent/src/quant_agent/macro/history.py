@@ -11,15 +11,20 @@ import pandas as pd
 
 from domain.macro import MacroSnapshot
 from domain.macro_history import MacroChangeEvent, MacroHistoryPoint
+from domain.market_theme import MarketThemeState
 from quant_agent.macro.data import build_live_macro_features
 from quant_agent.macro.rules import evaluate_macro
+from quant_agent.macro.themes import evaluate_fast_market_themes
 
 
 DEFAULT_HISTORY_DAYS = 14
 MINIMUM_HISTORY_COVERAGE = 0.5
 
 
-def history_point_from_snapshot(snapshot: MacroSnapshot) -> MacroHistoryPoint:
+def history_point_from_snapshot(
+    snapshot: MacroSnapshot,
+    theme_state: MarketThemeState | None = None,
+) -> MacroHistoryPoint:
     source_flows = {item.source_id: item.flow_billions_usd_20d for item in snapshot.liquidity_source_flows}
     targets = {item.target_id: item.absorption_score for item in snapshot.liquidity_target_flows}
     states = {item.target_id: item.state.value for item in snapshot.liquidity_target_flows}
@@ -35,6 +40,9 @@ def history_point_from_snapshot(snapshot: MacroSnapshot) -> MacroHistoryPoint:
         source_flows_bn=source_flows,
         target_absorption=targets,
         target_states=states,
+        dominant_theme_id=theme_state.dominant_theme_id if theme_state else None,
+        active_theme_ids=tuple(item.theme_id for item in theme_state.active_themes) if theme_state else (),
+        theme_scores={item.theme_id: item.confidence for item in theme_state.active_themes} if theme_state else {},
     )
 
 
@@ -56,7 +64,8 @@ def build_macro_history(
         features = build_live_macro_features(observations, point_as_of)
         snapshot = evaluate_macro(features, point_as_of)
         if snapshot.data_coverage >= MINIMUM_HISTORY_COVERAGE:
-            points.append(history_point_from_snapshot(snapshot))
+            theme_state = evaluate_fast_market_themes(features, snapshot)
+            points.append(history_point_from_snapshot(snapshot, theme_state))
     if len(points) < 2:
         raise RuntimeError("not enough point-in-time macro snapshots for change detection")
     return points
@@ -156,6 +165,13 @@ def detect_macro_changes(points: list[MacroHistoryPoint]) -> list[MacroChangeEve
             current_value=round(ai, 3), magnitude=large - ai, direction="AI_LAGGING",
             reason_codes=("LARGE_CAP_ABSORPTION_EXCEEDS_AI", "POSSIBLE_AI_CAPEX_OR_DURATION_CONSTRAINT"),
         ))
+    if current.dominant_theme_id != previous.dominant_theme_id:
+        events.append(_event(
+            current, previous, event_type="MARKET_THEME_SHIFT", entity_id="FAST_1_5D",
+            previous_value=previous.dominant_theme_id, current_value=current.dominant_theme_id,
+            magnitude=None, direction="CHANGED",
+            reason_codes=("DOMINANT_MARKET_THEME_CHANGED",),
+        ))
     return sorted(events, key=lambda item: (item.event_type, item.entity_id))
 
 
@@ -208,4 +224,3 @@ def publish_macro_history(
                  event.event_type, event.entity_id, int(event.needs_kimi_analysis),
                  json.dumps(asdict(event), ensure_ascii=False, sort_keys=True, default=str)),
             )
-

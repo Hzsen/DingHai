@@ -39,7 +39,10 @@ FRED_SERIES: dict[str, dict[str, Any]] = {
     "RRPONTSYD": {"provider_id": "RRPONTSYD", "unit": "billions_usd", "frequency": "daily", "lag_days": 0},
 }
 
-MARKET_SERIES = ("SPY", "QQQ", "IWM", "KRE", "SOXX", "GLD", "IEF", "TLT")
+MARKET_SERIES = (
+    "SPY", "QQQ", "IWM", "RSP", "KRE", "SOXX", "GLD", "IEF", "TLT",
+    "USO", "CPER", "FXY", "IBIT",
+)
 CBOE_SERIES = {
     "VIX": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
     "VIX3M": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX3M_History.csv",
