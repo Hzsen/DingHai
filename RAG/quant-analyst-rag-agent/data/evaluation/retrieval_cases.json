@@ -1,0 +1,64 @@
+[
+  {
+    "case_id": "factor-liquidity-definition",
+    "query": "How is the liquidity dollar volume factor defined?",
+    "as_of": "2026-07-22T12:00:00+08:00",
+    "top_k": 5,
+    "document_types": ["FACTOR_DEFINITION"],
+    "relevant_document_ids": ["markdown/factor_definitions/liquidity"]
+  },
+  {
+    "case_id": "momentum-march-2020",
+    "query": "What caused momentum to underperform in March 2020?",
+    "as_of": "2026-07-22T12:00:00+08:00",
+    "top_k": 5,
+    "relevant_document_ids": ["markdown/research_notes/march_2020_momentum_underperformance"]
+  },
+  {
+    "case_id": "high-volatility-regime",
+    "query": "How should momentum be interpreted in a high volatility regime?",
+    "as_of": "2026-07-22T12:00:00+08:00",
+    "top_k": 5,
+    "relevant_document_ids": ["markdown/research_notes/high_volatility_regime_notes"]
+  },
+  {
+    "case_id": "sector-rotation-notes",
+    "query": "sector rotation strategy research notes",
+    "as_of": "2026-07-22T12:00:00+08:00",
+    "top_k": 5,
+    "relevant_document_ids": ["markdown/research_notes/sector_rotation_notes"]
+  },
+  {
+    "case_id": "korea-semiconductor-event",
+    "query": "韩国加息是否导致亚洲半导体下跌？",
+    "as_of": "2026-07-18T12:00:00+08:00",
+    "top_k": 5,
+    "relevant_document_ids": ["macro-research/2026-07-17/korea-rate-asia-semiconductor"]
+  },
+  {
+    "case_id": "zhongji-state-change",
+    "query": "中际旭创 2025年10月23日从突破候选进入主升浪确认",
+    "as_of": "2025-10-24T23:59:59+08:00",
+    "top_k": 5,
+    "tickers": ["300308.SZ"],
+    "document_types": ["WEEKLY_RESEARCH"],
+    "relevant_document_ids": ["weekly/300308.SZ/2025-W43"]
+  },
+  {
+    "case_id": "screening-after-available",
+    "query": "A-share selloff repair screening Gold table",
+    "as_of": "2026-07-14T16:00:00+08:00",
+    "top_k": 3,
+    "document_types": ["SCREENING_REPORT"],
+    "relevant_document_ids": ["screening/cn-reversal/2026-07-14"]
+  },
+  {
+    "case_id": "screening-before-available",
+    "query": "A-share selloff repair screening Gold table",
+    "as_of": "2026-07-14T15:30:00+08:00",
+    "top_k": 3,
+    "document_types": ["SCREENING_REPORT"],
+    "forbidden_document_ids": ["screening/cn-reversal/2026-07-14"],
+    "expect_no_results": true
+  }
+]

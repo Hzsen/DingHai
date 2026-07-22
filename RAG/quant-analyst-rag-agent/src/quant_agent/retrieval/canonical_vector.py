@@ -116,17 +116,20 @@ SCHEMA = (
 class CanonicalVectorIndex:
     """Offline deterministic vector baseline over canonical, point-in-time-filtered chunks."""
 
-    def __init__(self, db_path: Path | str) -> None:
+    def __init__(self, db_path: Path | str, *, initialize: bool = True) -> None:
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as conn:
-            for statement in SCHEMA:
-                conn.execute(statement)
-            conn.execute(
-                """INSERT OR IGNORE INTO knowledge_index_state
-                (index_name,index_version,indexed_chunks,last_synced_at) VALUES (?,?,0,NULL)""",
-                ("vector", VECTOR_INDEX_VERSION),
-            )
+        if initialize:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            with self._connect() as conn:
+                for statement in SCHEMA:
+                    conn.execute(statement)
+                conn.execute(
+                    """INSERT OR IGNORE INTO knowledge_index_state
+                    (index_name,index_version,indexed_chunks,last_synced_at) VALUES (?,?,0,NULL)""",
+                    ("vector", VECTOR_INDEX_VERSION),
+                )
+        elif not self.db_path.exists():
+            raise FileNotFoundError(self.db_path)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)

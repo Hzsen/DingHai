@@ -199,12 +199,15 @@ def _job_from_row(row: sqlite3.Row) -> IndexJob:
 
 
 class KnowledgeStore:
-    def __init__(self, db_path: Path | str) -> None:
+    def __init__(self, db_path: Path | str, *, initialize: bool = True) -> None:
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as conn:
-            for statement in SCHEMA:
-                conn.execute(statement)
+        if initialize:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            with self._connect() as conn:
+                for statement in SCHEMA:
+                    conn.execute(statement)
+        elif not self.db_path.exists():
+            raise FileNotFoundError(self.db_path)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
