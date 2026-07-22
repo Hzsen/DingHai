@@ -19,13 +19,19 @@ def main() -> int:
     parser.add_argument("--db", default="data/processed/phase1_research.db")
     parser.add_argument("--dataset", default="data/evaluation/retrieval_cases.json")
     parser.add_argument("--minimum-pass-rate", type=float, default=1.0)
+    parser.add_argument("--output", help="Optional JSON report path")
     args = parser.parse_args()
     paths = Paths()
     report = run_canonical_retrieval_eval(
         _resolve(paths.project_root, args.db),
         _resolve(paths.project_root, args.dataset),
     )
-    print(json.dumps(asdict(report), ensure_ascii=False, indent=2, sort_keys=True))
+    serialized = json.dumps(asdict(report), ensure_ascii=False, indent=2, sort_keys=True)
+    if args.output:
+        output = _resolve(paths.project_root, args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(serialized + "\n", encoding="utf-8")
+    print(serialized)
     return 0 if report.pass_rate >= args.minimum_pass_rate else 1
 
 

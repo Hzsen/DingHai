@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 
@@ -11,7 +12,6 @@ from domain.retrieval_evaluation import (
     RetrievalEvalCaseResult,
     RetrievalEvalReport,
 )
-from quant_agent.knowledge.store import KnowledgeStore
 from quant_agent.query.service import RAGQueryService
 from quant_agent.retrieval.canonical_vector import CanonicalVectorIndex
 from quant_agent.retrieval.lexical import CanonicalLexicalIndex
@@ -53,7 +53,21 @@ def run_canonical_retrieval_eval(
     db_path: Path | str,
     dataset_path: Path | str,
 ) -> RetrievalEvalReport:
-    store = KnowledgeStore(db_path, initialize=False)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        document_rows = conn.execute(
+            """SELECT document_id,version,tickers_json,themes_json,document_type,status
+            FROM knowledge_documents"""
+        ).fetchall()
+    document_metadata = {
+        (str(row["document_id"]), int(row["version"])): {
+            "tickers": set(json.loads(row["tickers_json"])),
+            "themes": set(json.loads(row["themes_json"])),
+            "document_type": KnowledgeDocumentType(str(row["document_type"])),
+            "status": KnowledgeDocumentStatus(str(row["status"])),
+        }
+        for row in document_rows
+    }
     service = RAGQueryService(
         CanonicalLexicalIndex(db_path, initialize=False),
         CanonicalVectorIndex(db_path, initialize=False),
@@ -71,10 +85,13 @@ def run_canonical_retrieval_eval(
             top_k=case.top_k,
         ))
         returned = tuple(evidence.document_id for evidence in response.evidence)
-        relevant_ranks = tuple(
-            index + 1 for index, document_id in enumerate(returned)
-            if document_id in case.relevant_document_ids
-        )
+        seen_relevant: set[str] = set()
+        relevant_ranks_list: list[int] = []
+        for index, document_id in enumerate(returned):
+            if document_id in case.relevant_document_ids and document_id not in seen_relevant:
+                relevant_ranks_list.append(index + 1)
+                seen_relevant.add(document_id)
+        relevant_ranks = tuple(relevant_ranks_list)
         unique_relevant = set(case.relevant_document_ids)
         recall = (
             1.0
@@ -87,17 +104,17 @@ def run_canonical_retrieval_eval(
         )
         filter_violations = 0
         for evidence in response.evidence:
-            document = store.get_document(evidence.document_id, evidence.document_version)
-            if document is None:
+            metadata = document_metadata.get((evidence.document_id, evidence.document_version))
+            if metadata is None:
                 filter_violations += 1
                 continue
-            if case.tickers and not set(case.tickers) & set(document.tickers):
+            if case.tickers and not set(case.tickers) & metadata["tickers"]:
                 filter_violations += 1
-            if case.themes and not set(case.themes) & set(document.themes):
+            if case.themes and not set(case.themes) & metadata["themes"]:
                 filter_violations += 1
-            if case.document_types and document.document_type not in case.document_types:
+            if case.document_types and metadata["document_type"] not in case.document_types:
                 filter_violations += 1
-            if document.status not in case.statuses:
+            if metadata["status"] not in case.statuses:
                 filter_violations += 1
         forbidden_hits = sum(
             document_id in case.forbidden_document_ids for document_id in returned

@@ -14,6 +14,11 @@ from quant_agent.knowledge.store import KnowledgeStore, StoredKnowledgeChunk
 INDEX_VERSION = "canonical-lexical-v1.1.0"
 _LATIN_TOKEN = re.compile(r"[a-z0-9]+(?:[._:/-][a-z0-9]+)*", re.IGNORECASE)
 _CJK_RUN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
+_QUERY_STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "did", "do", "does",
+    "for", "from", "how", "in", "is", "it", "of", "on", "or", "the", "to",
+    "was", "were", "what", "when", "where", "which", "why", "with",
+}
 _ALIASES = {
     "bank_of_korea": ("韩国央行", "韩国银行", "bank of korea", "bok"),
     "semiconductor": ("半导体", "芯片", "semiconductor", "chip"),
@@ -56,10 +61,33 @@ def normalized_lexical_text(text: str) -> str:
 
 
 def build_match_expression(query_text: str) -> str:
-    unique_tokens = list(dict.fromkeys(tokenize_lexical(query_text)))[:64]
+    unique_tokens = _query_tokens(query_text)
     if not unique_tokens:
         return ""
     return " OR ".join(f'"{token}"' for token in unique_tokens)
+
+
+def _query_tokens(query_text: str) -> list[str]:
+    return [
+        token
+        for token in dict.fromkeys(tokenize_lexical(query_text))
+        if token not in _QUERY_STOPWORDS
+        and not (_CJK_RUN.fullmatch(token) and len(token) == 1)
+        and not (token.isalpha() and len(token) == 1)
+    ][:64]
+
+
+def _eligible_token_relevance(query_tokens: list[str], searchable_text: str) -> float:
+    """Rank already-filtered FTS candidates without triggering an expensive FTS join rank."""
+    if not query_tokens:
+        return 0.0
+    document_tokens = searchable_text.split()
+    document_token_set = set(document_tokens)
+    matched = sum(token in document_token_set for token in query_tokens)
+    coverage = matched / len(query_tokens)
+    frequency = sum(min(document_tokens.count(token), 3) for token in query_tokens)
+    frequency_score = min(frequency / max(len(query_tokens) * 2, 1), 1.0)
+    return (coverage * 0.85) + (frequency_score * 0.15)
 
 
 @dataclass(frozen=True, slots=True)
@@ -242,23 +270,18 @@ class CanonicalLexicalIndex:
         )
 
     def search(self, request: RAGQueryRequest, *, candidate_limit: int | None = None) -> list[LexicalHit]:
-        match_expression = build_match_expression(request.query_text)
+        query_tokens = _query_tokens(request.query_text)
+        match_expression = " OR ".join(f'"{token}"' for token in query_tokens)
         if not match_expression:
             return []
         conditions = [
-            "knowledge_lexical_index MATCH ?",
-            "d.document_id=i.document_id",
-            "d.version=CAST(i.document_version AS INTEGER)",
-            "c.chunk_id=i.chunk_id",
-            "c.document_id=i.document_id",
-            "c.document_version=CAST(i.document_version AS INTEGER)",
             "d.is_latest=1",
             "c.indexable=1",
             "d.available_at<=?",
             "c.available_at<=?",
         ]
         as_of = _utc_iso(request.as_of)
-        params: list[object] = [match_expression, as_of, as_of]
+        params: list[object] = [as_of, as_of]
         self._add_in_filter(conditions, params, "d.status", tuple(item.value for item in request.statuses))
         if request.document_types:
             self._add_in_filter(
@@ -290,18 +313,38 @@ class CanonicalLexicalIndex:
         limit = candidate_limit or max(request.top_k * 5, 20)
         if not 1 <= limit <= 1_000:
             raise ValueError("candidate_limit must be between 1 and 1000")
-        params.append(limit)
-        sql = f"""SELECT
+        # FTS5 remains the candidate generator. Scoring after hard temporal and
+        # metadata filters avoids pathological bm25()+JOIN query plans observed
+        # on SQLite while preserving the no-future-information invariant.
+        scan_limit = min(max(limit * 50, 1_000), 5_000)
+        sql = f"""WITH fts_hits AS MATERIALIZED (
+            SELECT chunk_id,document_id,document_version,searchable_text
+            FROM knowledge_lexical_index
+            WHERE knowledge_lexical_index MATCH ?
+            LIMIT ?
+        )
+            SELECT
             d.document_id,d.version,d.document_type,d.title,d.source_uri,d.reliability,
             c.chunk_id,c.section,c.text,COALESCE(c.event_time,d.event_time) AS effective_event_time,
-            c.available_at,bm25(knowledge_lexical_index,0,0,0,0,0,1.0,0.0) AS raw_rank
-            FROM knowledge_lexical_index i,knowledge_documents d,knowledge_chunks c
+            c.available_at,i.searchable_text
+            FROM fts_hits i
+            JOIN knowledge_documents d ON d.document_id=i.document_id
+            AND d.version=CAST(i.document_version AS INTEGER)
+            JOIN knowledge_chunks c ON c.chunk_id=i.chunk_id
+            AND c.document_id=i.document_id
+            AND c.document_version=CAST(i.document_version AS INTEGER)
             WHERE {' AND '.join(conditions)}
-            ORDER BY raw_rank ASC,c.available_at DESC LIMIT ?"""
+            ORDER BY c.available_at DESC"""
         with self._connect() as conn:
-            rows = conn.execute(sql, params).fetchall()
-        relevance = [max(0.0, -float(row["raw_rank"])) for row in rows]
-        maximum = max(relevance, default=0.0) or 1.0
+            rows = conn.execute(sql, [match_expression, scan_limit, *params]).fetchall()
+        ranked_rows = sorted(
+            (
+                (_eligible_token_relevance(query_tokens, str(row["searchable_text"])), row)
+                for row in rows
+            ),
+            key=lambda item: (item[0], item[1]["available_at"]),
+            reverse=True,
+        )[:limit]
         return [LexicalHit(
             document_id=row["document_id"],
             document_version=int(row["version"]),
@@ -314,8 +357,8 @@ class CanonicalLexicalIndex:
             event_time=_parse_datetime(row["effective_event_time"]),
             available_at=_parse_datetime(row["available_at"]),
             reliability=KnowledgeReliability(row["reliability"]),
-            lexical_score=round(score / maximum, 8),
-        ) for row, score in zip(rows, relevance)]
+            lexical_score=round(score, 8),
+        ) for score, row in ranked_rows]
 
     @staticmethod
     def _add_in_filter(

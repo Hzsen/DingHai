@@ -10,13 +10,18 @@ from typing import Any, Sequence
 
 from domain.knowledge import KnowledgeDocumentStatus, KnowledgeDocumentType
 from domain.query import QueryMode, RAGQueryRequest
+from domain.evidence import GroundedSynthesisResult
 from quant_agent.config import Paths
 from quant_agent.knowledge.store import KnowledgeStore
+from quant_agent.llm.kimi_client import KimiClient, KimiConfig
 from quant_agent.query.service import RAGQueryService
 from quant_agent.retrieval.canonical_vector import VECTOR_INDEX_VERSION, CanonicalVectorIndex
 from quant_agent.retrieval.index_worker import KnowledgeIndexWorker
 from quant_agent.retrieval.lexical import INDEX_VERSION, CanonicalLexicalIndex
 from quant_agent.retrieval.markdown_migration import migrate_markdown_documents
+from quant_agent.synthesis.cache import GroundedSynthesisCache
+from quant_agent.synthesis.evidence_packet import build_evidence_packet
+from quant_agent.synthesis.grounded import build_extractive_fallback, synthesize_grounded
 
 
 def _parse_as_of(value: str | None) -> datetime:
@@ -114,6 +119,62 @@ def _search(args: argparse.Namespace, paths: Paths) -> int:
     return 0
 
 
+def _answer(args: argparse.Namespace, paths: Paths) -> int:
+    store, lexical_index, vector_index = _runtime(paths, args.db)
+    if not args.no_bootstrap:
+        migrate_markdown_documents(store, paths.docs_dir, project_root=paths.project_root)
+        lexical_index.reconcile(store)
+        sync = KnowledgeIndexWorker(store, lexical_index, vector_index).sync(max_jobs=100_000)
+        if sync.failed:
+            raise RuntimeError(f"index sync failed for {sync.failed} jobs")
+        vector_index.reconcile(store)
+    as_of = _parse_as_of(args.as_of)
+    request = RAGQueryRequest(
+        query_text=args.query,
+        as_of=as_of,
+        mode=QueryMode.ANSWER,
+        tickers=tuple(args.ticker),
+        themes=tuple(args.theme),
+        top_k=args.top_k,
+        use_llm=args.use_kimi,
+    )
+    response = RAGQueryService(lexical_index, vector_index).search(request)
+    numeric_evidence: dict[str, Any] = {}
+    if args.numeric_evidence:
+        numeric_path = Path(args.numeric_evidence).expanduser().resolve()
+        loaded = json.loads(numeric_path.read_text(encoding="utf-8"))
+        if not isinstance(loaded, dict):
+            raise ValueError("--numeric-evidence must point to a JSON object")
+        numeric_evidence = loaded
+    packet = build_evidence_packet(
+        query=args.query,
+        as_of=as_of,
+        numeric_evidence=numeric_evidence,
+        retrieved_evidence=response.evidence,
+        token_budget=args.token_budget,
+    )
+    if args.use_kimi:
+        config = KimiConfig.from_env()
+        result = synthesize_grounded(
+            packet=packet,
+            client=KimiClient(config),
+            model=args.model or config.model,
+            cache=GroundedSynthesisCache(paths.project_root / ".cache" / "grounded_synthesis"),
+        )
+    else:
+        result = GroundedSynthesisResult(
+            payload=build_extractive_fallback(packet, provider_unavailable=False),
+            mode="EXTRACTIVE_ONLY",
+            cache_hit=False,
+        )
+    _print_json({
+        "query_id": response.query_id,
+        "packet": packet,
+        "synthesis": result,
+    })
+    return 0
+
+
 def _index(args: argparse.Namespace, paths: Paths) -> int:
     store, lexical_index, vector_index = _runtime(paths, args.db)
     if args.index_command == "migrate-markdown":
@@ -168,6 +229,19 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--include-drafts", action="store_true")
     search.add_argument("--json", action="store_true")
 
+    answer = subparsers.add_parser("answer", help="Build an evidence packet and optionally use Kimi")
+    answer.add_argument("query")
+    answer.add_argument("--as-of", help="ISO datetime with timezone, or YYYY-MM-DD")
+    answer.add_argument("--top-k", type=int, default=12)
+    answer.add_argument("--ticker", action="append", default=[])
+    answer.add_argument("--theme", action="append", default=[])
+    answer.add_argument("--numeric-evidence", help="JSON object file; values are preserved unchanged")
+    answer.add_argument("--token-budget", type=int, default=2_400)
+    answer.add_argument("--use-kimi", action="store_true", help="Explicitly enable grounded Kimi synthesis")
+    answer.add_argument("--model")
+    answer.add_argument("--db")
+    answer.add_argument("--no-bootstrap", action="store_true")
+
     index = subparsers.add_parser("index", help="Migrate and synchronize canonical hybrid indexes")
     index_subparsers = index.add_subparsers(dest="index_command", required=True)
     migrate = index_subparsers.add_parser("migrate-markdown", help="Idempotently migrate data/docs Markdown")
@@ -188,6 +262,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     paths = Paths()
     if args.command == "search":
         return _search(args, paths)
+    if args.command == "answer":
+        return _answer(args, paths)
     if args.command == "index":
         return _index(args, paths)
     parser.error(f"unknown command: {args.command}")

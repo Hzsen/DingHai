@@ -1,0 +1,2 @@
+"""Evidence-bounded answer synthesis."""
+

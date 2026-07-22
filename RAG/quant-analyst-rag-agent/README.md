@@ -24,6 +24,7 @@
 - 宏观 point-in-time features、四类规则模型、时效性风险文档和 liquidity transmission 仪表盘。
 - 付费订阅/私人宏观材料的 local-first ingestion、观点卡、Kimi egress policy 与 hash-only audit。
 - Phase A canonical search：typed query contract、Markdown 幂等迁移、中文 SQLite FTS5、outbox worker 与统一 `quant-agent search`。
+- RAG Phase 4/5：canonical offline vector + temporal hybrid retrieval、labeled retrieval evaluation、context dedup/token budget、EvidencePacket 与可选 Kimi grounded synthesis。
 
 当前版本已经跑通小规模真实数据，但尚不能视为生产交易系统。下一阶段重点是扩大历史覆盖、验证规则稳定性、补充数据源 fallback，并把宏观和 A 股结果接入统一检索入口。
 
@@ -149,6 +150,32 @@ quant-agent search "韩国加息是否导致亚洲半导体下跌？" --as-of 20
 ```
 
 搜索默认只返回当时已可见的 `FINALIZED` evidence，不调用 Kimi。完整 contract、幂等语义和验收记录见 [Phase A Canonical Search](docs/phase-a-canonical-search.md)。
+
+### Retrieval evaluation 与 grounded answer（Phase 5）
+
+先在固定标注集上验证 retrieval；该命令完全离线，不调用 Kimi：
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.run_canonical_retrieval_eval \
+  --dataset data/evaluation/retrieval_cases.json \
+  --output outputs/evaluation/retrieval_eval_phase5.json
+```
+
+默认 answer 模式只构建受预算约束的 EvidencePacket 并返回 extractive evidence：
+
+```bash
+quant-agent answer "中际旭创的主升浪状态为何改变？" \
+  --ticker 300308.SZ --as-of 2025-10-24 --no-bootstrap
+```
+
+只有显式增加 `--use-kimi` 才调用 Kimi。发送内容最多 6 documents、每 document 最多 2 chunks，并受默认 2,400 estimated-token budget 约束；所有生成 claims 必须引用 packet 中的 evidence ID。相同 packet/model/prompt 会命中本地 cache：
+
+```bash
+quant-agent answer "中际旭创的主升浪状态为何改变？" \
+  --ticker 300308.SZ --as-of 2025-10-24 --use-kimi
+```
+
+设计决策、真实 evaluation 结果和失败边界见 [ADR 0013](docs/adr/0013-retrieval-evaluation-and-grounded-synthesis.md)。
 
 ## 4. 总体架构
 

@@ -266,11 +266,6 @@ class CanonicalVectorIndex:
         if not query_vector:
             return []
         conditions = [
-            "d.document_id=v.document_id",
-            "d.version=v.document_version",
-            "c.chunk_id=v.chunk_id",
-            "c.document_id=v.document_id",
-            "c.document_version=v.document_version",
             "v.content_hash=c.content_hash",
             "v.embedding_version=?",
             "v.dimension=?",
@@ -313,7 +308,12 @@ class CanonicalVectorIndex:
             d.document_id,d.version,d.document_type,d.title,d.source_uri,d.reliability,
             c.chunk_id,c.section,c.text,COALESCE(c.event_time,d.event_time) AS effective_event_time,
             c.available_at,v.vector_json
-            FROM knowledge_vector_index v,knowledge_documents d,knowledge_chunks c
+            FROM knowledge_vector_index v
+            JOIN knowledge_documents d ON d.document_id=v.document_id
+            AND d.version=v.document_version
+            JOIN knowledge_chunks c ON c.chunk_id=v.chunk_id
+            AND c.document_id=v.document_id
+            AND c.document_version=v.document_version
             WHERE {' AND '.join(conditions)}"""
         with self._connect() as conn:
             rows = conn.execute(sql, params).fetchall()

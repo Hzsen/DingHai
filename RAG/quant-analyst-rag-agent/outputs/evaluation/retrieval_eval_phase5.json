@@ -1,0 +1,161 @@
+{
+  "case_count": 8,
+  "cases": [
+    {
+      "case_id": "factor-liquidity-definition",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "markdown/factor_definitions/liquidity",
+        "markdown/factor_definitions/liquidity",
+        "markdown/factor_definitions/liquidity",
+        "markdown/factor_definitions/liquidity",
+        "markdown/factor_definitions/volatility"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "momentum-march-2020",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "markdown/research_notes/march_2020_momentum_underperformance",
+        "markdown/research_notes/march_2020_momentum_underperformance",
+        "markdown/research_notes/march_2020_momentum_underperformance",
+        "markdown/factor_definitions/momentum",
+        "markdown/research_notes/liquidity_shock_notes"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "high-volatility-regime",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "markdown/research_notes/high_volatility_regime_notes",
+        "markdown/factor_definitions/volatility",
+        "markdown/research_notes/high_volatility_regime_notes",
+        "markdown/research_notes/march_2020_momentum_underperformance",
+        "markdown/research_notes/high_volatility_regime_notes"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "sector-rotation-notes",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "markdown/research_notes/sector_rotation_notes",
+        "markdown/research_notes/sector_rotation_notes",
+        "markdown/research_notes/high_volatility_regime_notes",
+        "markdown/factor_definitions/sector_rotation",
+        "markdown/research_notes/liquidity_shock_notes"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "korea-semiconductor-event",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "macro-research/2026-07-17/korea-rate-asia-semiconductor",
+        "macro-research/2026-07-17/korea-rate-asia-semiconductor",
+        "macro-research/2026-07-17/korea-rate-asia-semiconductor",
+        "macro-research/2026-07-17/korea-rate-asia-semiconductor",
+        "macro-research/2026-07-17/korea-rate-asia-semiconductor"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "zhongji-state-change",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "weekly/300308.SZ/2025-W43",
+        "weekly/300308.SZ/2025-W43",
+        "weekly/300308.SZ/2025-W26",
+        "weekly/300308.SZ/2025-W39",
+        "weekly/300308.SZ/2025-W21"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "screening-after-available",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "relevant_ranks": [
+        1
+      ],
+      "returned_document_ids": [
+        "screening/cn-reversal/2026-07-14"
+      ],
+      "temporal_violation_count": 0
+    },
+    {
+      "case_id": "screening-before-available",
+      "failure_reasons": [],
+      "filter_violation_count": 0,
+      "forbidden_hit_count": 0,
+      "passed": true,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.0,
+      "relevant_ranks": [],
+      "returned_document_ids": [],
+      "temporal_violation_count": 0
+    }
+  ],
+  "dataset_path": "/Users/hzs/Documents/GitHub/DingHai/RAG/quant-analyst-rag-agent/data/evaluation/retrieval_cases.json",
+  "filter_violation_count": 0,
+  "forbidden_hit_count": 0,
+  "mean_recall_at_k": 1.0,
+  "mean_reciprocal_rank": 0.875,
+  "pass_rate": 1.0,
+  "passed_count": 8,
+  "temporal_violation_count": 0
+}
