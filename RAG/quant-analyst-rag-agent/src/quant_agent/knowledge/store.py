@@ -475,6 +475,70 @@ class KnowledgeStore:
         counts.update({str(row["status"]): int(row["count"]) for row in rows})
         return counts
 
+    def list_current_indexable_chunks(self) -> list[StoredKnowledgeChunk]:
+        """Return the canonical latest indexable set for index reconciliation."""
+        with self._connect() as conn:
+            document_rows = conn.execute(
+                """SELECT * FROM knowledge_documents WHERE is_latest=1
+                AND status NOT IN (?,?) ORDER BY document_id""",
+                (
+                    KnowledgeDocumentStatus.SUPERSEDED.value,
+                    KnowledgeDocumentStatus.RETRACTED.value,
+                ),
+            ).fetchall()
+            chunk_rows = conn.execute(
+                """SELECT c.* FROM knowledge_chunks c JOIN knowledge_documents d
+                ON d.document_id=c.document_id AND d.version=c.document_version
+                WHERE d.is_latest=1 AND c.indexable=1
+                AND d.status NOT IN (?,?) ORDER BY c.document_id,c.ordinal,c.chunk_id""",
+                (
+                    KnowledgeDocumentStatus.SUPERSEDED.value,
+                    KnowledgeDocumentStatus.RETRACTED.value,
+                ),
+            ).fetchall()
+        documents = {
+            (str(row["document_id"]), int(row["version"])): _document_from_row(row)
+            for row in document_rows
+        }
+        return [
+            StoredKnowledgeChunk(
+                documents[(str(row["document_id"]), int(row["document_version"]))],
+                _chunk_from_row(row),
+            )
+            for row in chunk_rows
+        ]
+
+    def count_current_indexable_chunks(self) -> int:
+        with self._connect() as conn:
+            return int(conn.execute(
+                """SELECT COUNT(*) FROM knowledge_chunks c JOIN knowledge_documents d
+                ON d.document_id=c.document_id AND d.version=c.document_version
+                WHERE d.is_latest=1 AND c.indexable=1
+                AND d.status NOT IN (?,?)""",
+                (
+                    KnowledgeDocumentStatus.SUPERSEDED.value,
+                    KnowledgeDocumentStatus.RETRACTED.value,
+                ),
+            ).fetchone()[0])
+
+    def current_index_manifest(self) -> set[tuple[str, int, str]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT c.chunk_id,c.document_version,c.content_hash
+                FROM knowledge_chunks c JOIN knowledge_documents d
+                ON d.document_id=c.document_id AND d.version=c.document_version
+                WHERE d.is_latest=1 AND c.indexable=1
+                AND d.status NOT IN (?,?)""",
+                (
+                    KnowledgeDocumentStatus.SUPERSEDED.value,
+                    KnowledgeDocumentStatus.RETRACTED.value,
+                ),
+            ).fetchall()
+        return {
+            (str(row["chunk_id"]), int(row["document_version"]), str(row["content_hash"]))
+            for row in rows
+        }
+
     def query_chunks(self, query: KnowledgeQuery, limit: int | None = None) -> list[StoredKnowledgeChunk]:
         conditions = [
             "d.is_latest=1", "c.indexable=1", "d.available_at<=?", "c.available_at<=?",

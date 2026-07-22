@@ -8,11 +8,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Sequence
 
-from domain.knowledge import KnowledgeDocumentType
+from domain.knowledge import KnowledgeDocumentStatus, KnowledgeDocumentType
 from domain.query import QueryMode, RAGQueryRequest
 from quant_agent.config import Paths
 from quant_agent.knowledge.store import KnowledgeStore
 from quant_agent.query.service import RAGQueryService
+from quant_agent.retrieval.canonical_vector import VECTOR_INDEX_VERSION, CanonicalVectorIndex
 from quant_agent.retrieval.index_worker import KnowledgeIndexWorker
 from quant_agent.retrieval.lexical import INDEX_VERSION, CanonicalLexicalIndex
 from quant_agent.retrieval.markdown_migration import migrate_markdown_documents
@@ -59,19 +60,24 @@ def _resolve_db(paths: Paths, value: str | None) -> Path:
     return path.resolve() if path.is_absolute() else (paths.project_root / path).resolve()
 
 
-def _runtime(paths: Paths, db_value: str | None) -> tuple[KnowledgeStore, CanonicalLexicalIndex]:
+def _runtime(
+    paths: Paths,
+    db_value: str | None,
+) -> tuple[KnowledgeStore, CanonicalLexicalIndex, CanonicalVectorIndex]:
     db_path = _resolve_db(paths, db_value)
     store = KnowledgeStore(db_path)
-    return store, CanonicalLexicalIndex(db_path)
+    return store, CanonicalLexicalIndex(db_path), CanonicalVectorIndex(db_path)
 
 
 def _search(args: argparse.Namespace, paths: Paths) -> int:
-    store, lexical_index = _runtime(paths, args.db)
+    store, lexical_index, vector_index = _runtime(paths, args.db)
     if not args.no_bootstrap:
         migrate_markdown_documents(store, paths.docs_dir, project_root=paths.project_root)
-        sync = KnowledgeIndexWorker(store, lexical_index).sync()
+        lexical_index.reconcile(store)
+        sync = KnowledgeIndexWorker(store, lexical_index, vector_index).sync(max_jobs=100_000)
         if sync.failed:
             raise RuntimeError(f"index sync failed for {sync.failed} jobs")
+        vector_index.reconcile(store)
     request = RAGQueryRequest(
         query_text=args.query,
         as_of=_parse_as_of(args.as_of),
@@ -79,9 +85,14 @@ def _search(args: argparse.Namespace, paths: Paths) -> int:
         tickers=tuple(args.ticker),
         themes=tuple(args.theme),
         document_types=tuple(KnowledgeDocumentType(value) for value in args.document_type),
+        statuses=(
+            (KnowledgeDocumentStatus.FINALIZED, KnowledgeDocumentStatus.DRAFT)
+            if args.include_drafts
+            else (KnowledgeDocumentStatus.FINALIZED,)
+        ),
         top_k=args.top_k,
     )
-    response = RAGQueryService(lexical_index).search(request)
+    response = RAGQueryService(lexical_index, vector_index).search(request)
     if args.json:
         _print_json(response)
         return 0
@@ -104,20 +115,35 @@ def _search(args: argparse.Namespace, paths: Paths) -> int:
 
 
 def _index(args: argparse.Namespace, paths: Paths) -> int:
-    store, lexical_index = _runtime(paths, args.db)
+    store, lexical_index, vector_index = _runtime(paths, args.db)
     if args.index_command == "migrate-markdown":
         docs_dir = Path(args.docs_dir).resolve() if args.docs_dir else paths.docs_dir
         _print_json(migrate_markdown_documents(store, docs_dir, project_root=paths.project_root))
         return 0
     if args.index_command == "sync":
-        result = KnowledgeIndexWorker(store, lexical_index).sync(max_jobs=args.max_jobs)
-        _print_json(result)
+        lexical_reconciliation = lexical_index.reconcile(store)
+        result = KnowledgeIndexWorker(store, lexical_index, vector_index).sync(max_jobs=args.max_jobs)
+        reconciliation = None if args.no_reconcile else vector_index.reconcile(store)
+        _print_json({
+            "lexical_reconciliation": lexical_reconciliation,
+            "sync": result,
+            "vector_reconciliation": reconciliation,
+        })
         return 1 if result.failed else 0
     if args.index_command == "status":
+        canonical_manifest = store.current_index_manifest()
+        lexical_manifest = lexical_index.manifest()
+        vector_manifest = vector_index.manifest()
         _print_json({
             "database": store.db_path,
-            "index_version": INDEX_VERSION,
-            "indexed_chunks": lexical_index.count(),
+            "lexical_index_version": INDEX_VERSION,
+            "vector_index_version": VECTOR_INDEX_VERSION,
+            "canonical_indexable_chunks": len(canonical_manifest),
+            "indexed_lexical_chunks": len(lexical_manifest),
+            "indexed_vectors": len(vector_manifest),
+            "lexical_in_parity": canonical_manifest == lexical_manifest,
+            "vector_in_parity": canonical_manifest == vector_manifest,
+            "indexes_in_parity": canonical_manifest == lexical_manifest == vector_manifest,
             "outbox": store.index_job_counts(),
         })
         return 0
@@ -139,17 +165,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     search.add_argument("--db")
     search.add_argument("--no-bootstrap", action="store_true")
+    search.add_argument("--include-drafts", action="store_true")
     search.add_argument("--json", action="store_true")
 
-    index = subparsers.add_parser("index", help="Migrate and synchronize the canonical lexical index")
+    index = subparsers.add_parser("index", help="Migrate and synchronize canonical hybrid indexes")
     index_subparsers = index.add_subparsers(dest="index_command", required=True)
     migrate = index_subparsers.add_parser("migrate-markdown", help="Idempotently migrate data/docs Markdown")
     migrate.add_argument("--docs-dir")
     migrate.add_argument("--db")
-    sync = index_subparsers.add_parser("sync", help="Consume pending knowledge_index_jobs")
-    sync.add_argument("--max-jobs", type=int, default=1_000)
+    sync = index_subparsers.add_parser("sync", help="Consume pending jobs into lexical and vector indexes")
+    sync.add_argument("--max-jobs", type=int, default=100_000)
+    sync.add_argument("--no-reconcile", action="store_true")
     sync.add_argument("--db")
-    status = index_subparsers.add_parser("status", help="Show lexical index and outbox status")
+    status = index_subparsers.add_parser("status", help="Show hybrid index parity and outbox status")
     status.add_argument("--db")
     return parser
 

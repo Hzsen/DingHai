@@ -568,6 +568,22 @@ PYTHONPATH=src .venv/bin/python -m quant_agent.cli.ingest_knowledge
 
 真实迁移发现1,702份文档，新增1,693份document和2,575个chunks，产生1,947个待处理index jobs；立即重跑全部skip且新增0行。设计与验收见 `docs/adr/0008-canonical-knowledge-contract.md`、`docs/adr/0009-sqlite-knowledge-store.md` 与 `docs/adr/0011-knowledge-adapters-and-real-migration.md`。
 
+### Incremental Indexing 与 Temporal Hybrid Retrieval（RAG Phase 4，已实现）
+
+Canonical outbox现在同时驱动SQLite FTS5和本地deterministic vector index；任一backend失败都不会ACK job。Lexical与vector在排序前分别执行latest version、document/chunk `available_at`、status、ticker、theme、document type、reliability和event-time filters，再按chunk identity使用weighted reciprocal-rank fusion。
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.main index sync \
+  --db data/processed/phase1_research.db
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.main index status \
+  --db data/processed/phase1_research.db
+PYTHONPATH=src .venv/bin/python -m quant_agent.cli.main search \
+  "中际旭创 主升浪 状态变化" --ticker 300308.SZ \
+  --as-of 2026-06-30 --top-k 5 --no-bootstrap
+```
+
+当前canonical、lexical和vector均为1,996条，outbox pending/failed均为0。Vector是1,024维离线feature-hashing baseline，用于先验证incremental lifecycle和temporal correctness，不冒充neural embedding，也不消耗Kimi/API token。真实结果、alias误命中修复和future-cutoff验收见 `docs/adr/0012-incremental-indexing-and-temporal-hybrid-retrieval.md`。
+
 ### Selloff repair leader screen（急跌修复研究切片，已实现）
 
 市场急跌后不直接沿用“必须正在突破新高”的硬条件，而是先确认沪深300处于 `SELLOFF_REPAIR`，再寻找急跌前具备主升 signature、下跌中相对抗跌、修复日重新收复均线并获得成交量确认的股票。

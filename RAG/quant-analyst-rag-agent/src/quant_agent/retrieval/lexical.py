@@ -8,10 +8,10 @@ from pathlib import Path
 
 from domain.knowledge import KnowledgeDocumentType, KnowledgeReliability
 from domain.query import RAGQueryRequest
-from quant_agent.knowledge.store import StoredKnowledgeChunk
+from quant_agent.knowledge.store import KnowledgeStore, StoredKnowledgeChunk
 
 
-INDEX_VERSION = "canonical-lexical-v1.0.0"
+INDEX_VERSION = "canonical-lexical-v1.1.0"
 _LATIN_TOKEN = re.compile(r"[a-z0-9]+(?:[._:/-][a-z0-9]+)*", re.IGNORECASE)
 _CJK_RUN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
 _ALIASES = {
@@ -22,6 +22,12 @@ _ALIASES = {
     "liquidity": ("流动性", "liquidity"),
     "artificial_intelligence": ("人工智能", "ai"),
 }
+
+
+def _contains_alias(normalized: str, alias: str) -> bool:
+    if re.fullmatch(r"[a-z0-9 ]+", alias):
+        return re.search(rf"(?<![a-z0-9]){re.escape(alias)}(?![a-z0-9])", normalized) is not None
+    return alias in normalized
 
 
 def tokenize_lexical(text: str) -> list[str]:
@@ -40,7 +46,7 @@ def tokenize_lexical(text: str) -> list[str]:
         if len(chars) <= 8:
             tokens.append(run)
     for canonical, aliases in _ALIASES.items():
-        if any(alias in normalized for alias in aliases):
+        if any(_contains_alias(normalized, alias) for alias in aliases):
             tokens.append(canonical)
     return [token for token in tokens if token.strip()]
 
@@ -70,6 +76,15 @@ class LexicalHit:
     available_at: datetime
     reliability: KnowledgeReliability
     lexical_score: float
+
+
+@dataclass(frozen=True, slots=True)
+class LexicalReconcileResult:
+    canonical_chunks: int
+    inserted_or_updated: int
+    deleted_stale: int
+    full_rebuild: bool
+    indexed_chunks: int
 
 
 SCHEMA = (
@@ -117,8 +132,14 @@ class CanonicalLexicalIndex:
         return f"{chunk_id}@{document_version}"
 
     def upsert(self, stored: StoredKnowledgeChunk) -> None:
+        with self._connect() as conn:
+            self._upsert_conn(conn, stored)
+            self._update_state(conn)
+
+    @staticmethod
+    def _searchable_text(stored: StoredKnowledgeChunk) -> str:
         document, chunk = stored.document, stored.chunk
-        searchable = normalized_lexical_text(" ".join((
+        return normalized_lexical_text(" ".join((
             document.title,
             chunk.section,
             chunk.text,
@@ -126,17 +147,19 @@ class CanonicalLexicalIndex:
             " ".join(document.themes),
             document.document_type.value,
         )))
+
+    def _upsert_conn(self, conn: sqlite3.Connection, stored: StoredKnowledgeChunk) -> None:
+        chunk = stored.chunk
+        searchable = self._searchable_text(stored)
         chunk_key = self._chunk_key(chunk.chunk_id, chunk.document_version)
-        with self._connect() as conn:
-            conn.execute("DELETE FROM knowledge_lexical_index WHERE chunk_key=?", (chunk_key,))
-            conn.execute(
-                "INSERT INTO knowledge_lexical_index VALUES (?,?,?,?,?,?,?)",
-                (
-                    chunk_key, chunk.chunk_id, chunk.document_id, str(chunk.document_version),
-                    chunk.content_hash, searchable, chunk.text,
-                ),
-            )
-            self._update_state(conn)
+        conn.execute("DELETE FROM knowledge_lexical_index WHERE chunk_key=?", (chunk_key,))
+        conn.execute(
+            "INSERT INTO knowledge_lexical_index VALUES (?,?,?,?,?,?,?)",
+            (
+                chunk_key, chunk.chunk_id, chunk.document_id, str(chunk.document_version),
+                chunk.content_hash, searchable, chunk.text,
+            ),
+        )
 
     def delete(self, chunk_id: str, document_version: int) -> None:
         with self._connect() as conn:
@@ -157,6 +180,63 @@ class CanonicalLexicalIndex:
     def count(self) -> int:
         with self._connect() as conn:
             return int(conn.execute("SELECT COUNT(*) FROM knowledge_lexical_index").fetchone()[0])
+
+    def manifest(self) -> set[tuple[str, int, str]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT chunk_id,CAST(document_version AS INTEGER) AS document_version,content_hash
+                FROM knowledge_lexical_index"""
+            ).fetchall()
+        return {
+            (str(row["chunk_id"]), int(row["document_version"]), str(row["content_hash"]))
+            for row in rows
+        }
+
+    def reconcile(self, store: KnowledgeStore) -> LexicalReconcileResult:
+        if store.db_path.resolve() != self.db_path.resolve():
+            raise ValueError("KnowledgeStore and lexical index must use the same SQLite database")
+        canonical = store.list_current_indexable_chunks()
+        expected = {(item.chunk.chunk_id, item.chunk.document_version): item for item in canonical}
+        inserted_or_updated = 0
+        deleted_stale = 0
+        with self._connect() as conn:
+            state = conn.execute(
+                "SELECT index_version FROM knowledge_index_state WHERE index_name='lexical'"
+            ).fetchone()
+            full_rebuild = state is None or state["index_version"] != INDEX_VERSION
+            existing_rows = conn.execute(
+                """SELECT chunk_id,CAST(document_version AS INTEGER) AS document_version,content_hash
+                FROM knowledge_lexical_index"""
+            ).fetchall()
+            existing = {
+                (str(row["chunk_id"]), int(row["document_version"])): row
+                for row in existing_rows
+            }
+            if full_rebuild:
+                deleted_stale = len(existing)
+                conn.execute("DELETE FROM knowledge_lexical_index")
+                existing = {}
+            else:
+                for identity in existing.keys() - expected.keys():
+                    conn.execute(
+                        "DELETE FROM knowledge_lexical_index WHERE chunk_key=?",
+                        (self._chunk_key(*identity),),
+                    )
+                    deleted_stale += 1
+            for identity, stored in expected.items():
+                row = existing.get(identity)
+                if row is not None and row["content_hash"] == stored.chunk.content_hash:
+                    continue
+                self._upsert_conn(conn, stored)
+                inserted_or_updated += 1
+            self._update_state(conn)
+        return LexicalReconcileResult(
+            canonical_chunks=len(canonical),
+            inserted_or_updated=inserted_or_updated,
+            deleted_stale=deleted_stale,
+            full_rebuild=full_rebuild,
+            indexed_chunks=self.count(),
+        )
 
     def search(self, request: RAGQueryRequest, *, candidate_limit: int | None = None) -> list[LexicalHit]:
         match_expression = build_match_expression(request.query_text)

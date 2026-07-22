@@ -88,6 +88,8 @@ def test_bilingual_tokenizer_adds_cjk_and_domain_aliases() -> None:
     assert "半导体" in tokens
     assert "bank_of_korea" in tokens
     assert "semiconductor" in tokens
+    assert "artificial_intelligence" not in tokenize_lexical("selloff repair")
+    assert "artificial_intelligence" in tokenize_lexical("AI infrastructure")
 
 
 def test_outbox_worker_indexes_chinese_and_query_service_returns_typed_evidence(tmp_path) -> None:

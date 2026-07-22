@@ -7,6 +7,7 @@ from quant_agent.knowledge.store import (
     IndexJobOperation,
     KnowledgeStore,
 )
+from quant_agent.retrieval.canonical_vector import CanonicalVectorIndex
 from quant_agent.retrieval.lexical import CanonicalLexicalIndex
 
 
@@ -20,16 +21,25 @@ class IndexSyncResult:
     skipped_stale: int
     remaining_jobs: dict[str, int]
     indexed_chunks: int
+    indexed_vectors: int | None
 
 
 class KnowledgeIndexWorker:
     """At-least-once, idempotent consumer for KnowledgeStore index jobs."""
 
-    def __init__(self, store: KnowledgeStore, lexical_index: CanonicalLexicalIndex) -> None:
+    def __init__(
+        self,
+        store: KnowledgeStore,
+        lexical_index: CanonicalLexicalIndex,
+        vector_index: CanonicalVectorIndex | None = None,
+    ) -> None:
         if store.db_path.resolve() != lexical_index.db_path.resolve():
             raise ValueError("KnowledgeStore and lexical index must use the same SQLite database")
+        if vector_index is not None and store.db_path.resolve() != vector_index.db_path.resolve():
+            raise ValueError("KnowledgeStore and vector index must use the same SQLite database")
         self.store = store
         self.lexical_index = lexical_index
+        self.vector_index = vector_index
 
     def sync(self, *, max_jobs: int = 1_000, batch_size: int = 100) -> IndexSyncResult:
         if not 1 <= max_jobs <= 100_000:
@@ -47,6 +57,8 @@ class KnowledgeIndexWorker:
                 try:
                     if job.operation is IndexJobOperation.DELETE:
                         self.lexical_index.delete(job.chunk_id, job.document_version)
+                        if self.vector_index is not None:
+                            self.vector_index.delete(job.chunk_id, job.document_version)
                         deleted += 1
                     else:
                         stored = self.store.get_stored_chunk(
@@ -57,9 +69,13 @@ class KnowledgeIndexWorker:
                         )
                         if stored is None:
                             self.lexical_index.delete(job.chunk_id, job.document_version)
+                            if self.vector_index is not None:
+                                self.vector_index.delete(job.chunk_id, job.document_version)
                             skipped_stale += 1
                         else:
                             self.lexical_index.upsert(stored)
+                            if self.vector_index is not None:
+                                self.vector_index.upsert(stored)
                             upserted += 1
                     self.store.complete_index_job(job.job_id)
                     completed += 1
@@ -75,4 +91,5 @@ class KnowledgeIndexWorker:
             skipped_stale=skipped_stale,
             remaining_jobs=self.store.index_job_counts(),
             indexed_chunks=self.lexical_index.count(),
+            indexed_vectors=self.vector_index.count() if self.vector_index is not None else None,
         )
