@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-import pandas as pd
+from datetime import date, datetime
 
+import pandas as pd
+import pytest
+
+from quant_agent.cli.run_reversal_screen import validate_temporal_run_mode
 from quant_agent.data_sources.sina_market import prefilter_repair_universe
 from quant_agent.screening.reversal import build_reversal_features, classify_market_repair, publish_reversal_screen, score_reversal_features
 
@@ -101,3 +105,14 @@ def test_reversal_gold_publish_is_idempotent(tmp_path) -> None:
         focus = conn.execute("SELECT focus_selected FROM gold_cn_reversal_screen_results").fetchone()[0]
     assert count == 1
     assert focus == 1
+
+
+def test_intraday_and_historical_spot_temporal_guards() -> None:
+    now = datetime(2026, 7, 24, 14, 30)
+    with pytest.raises(RuntimeError, match="not finalized"):
+        validate_temporal_run_mode(date(2026, 7, 24), now, preview=False, from_cache=False)
+    validate_temporal_run_mode(date(2026, 7, 24), now, preview=True, from_cache=False)
+
+    with pytest.raises(RuntimeError, match="cannot be relabeled"):
+        validate_temporal_run_mode(date(2026, 7, 23), now, preview=False, from_cache=False)
+    validate_temporal_run_mode(date(2026, 7, 23), now, preview=False, from_cache=True)

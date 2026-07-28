@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import date
+from datetime import date, datetime, time
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -27,8 +28,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--from-cache", action="store_true")
     parser.add_argument("--reuse-spot-cache", action="store_true")
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Use an isolated intraday cache and do not publish Gold rows.",
+    )
     parser.add_argument("--db", default="data/processed/phase1_research.db")
     return parser.parse_args()
+
+
+def validate_temporal_run_mode(
+    as_of: date,
+    now: datetime,
+    *,
+    preview: bool,
+    from_cache: bool,
+) -> None:
+    market_close_ready = now.time() >= time(15, 10)
+    if as_of == now.date() and not market_close_ready and not preview:
+        raise RuntimeError("today's market is not finalized; rerun with --preview before 15:10 Asia/Shanghai")
+    if as_of < now.date() and not from_cache:
+        raise RuntimeError(
+            "live spot cannot be relabeled as a historical date; use an existing --from-cache snapshot"
+        )
 
 
 def _fetch_benchmark(as_of: date) -> pd.DataFrame:
@@ -57,6 +79,13 @@ def _render_report(scored: pd.DataFrame, regime: dict[str, object], metadata: di
     ].head(15)
     lines = [
         f"# A-share Selloff Repair Screen — {metadata['as_of']}", "",
+        f"> Publication mode: `{metadata['publication_mode']}`. "
+        + (
+            "Intraday data are incomplete; this preview is not written to Gold."
+            if metadata["publication_mode"] == "INTRADAY_PREVIEW"
+            else "Finalized daily screen published to Gold."
+        ),
+        "",
         "> Research screen only. The historical universe was prefiltered from the full Sina snapshot; this is not yet a full-universe backtest.", "",
         "## Market Regime", "",
         f"- Regime: `{regime['regime']}`",
@@ -92,16 +121,24 @@ def _render_report(scored: pd.DataFrame, regime: dict[str, object], metadata: di
 def main() -> None:
     args = parse_args()
     as_of = date.fromisoformat(args.as_of)
+    shanghai_now = datetime.now(ZoneInfo("Asia/Shanghai"))
+    validate_temporal_run_mode(
+        as_of,
+        shanghai_now,
+        preview=args.preview,
+        from_cache=args.from_cache,
+    )
     root = Paths().project_root
     raw_dir = root / "data" / "raw" / "sina"
     interim_dir = root / "data" / "interim" / "reversal"
     output_dir = root / "outputs" / "reversal"
     for directory in (raw_dir, interim_dir, output_dir):
         directory.mkdir(parents=True, exist_ok=True)
-    spot_path = raw_dir / f"stock_spot_{as_of.isoformat()}.parquet"
-    history_path = interim_dir / f"repair_histories_{as_of.isoformat()}.parquet"
-    benchmark_path = interim_dir / f"csi300_{as_of.isoformat()}.parquet"
-    errors_path = output_dir / f"history_errors_{as_of.isoformat()}.json"
+    cache_suffix = "_intraday_preview" if args.preview else ""
+    spot_path = raw_dir / f"stock_spot_{as_of.isoformat()}{cache_suffix}.parquet"
+    history_path = interim_dir / f"repair_histories_{as_of.isoformat()}{cache_suffix}.parquet"
+    benchmark_path = interim_dir / f"csi300_{as_of.isoformat()}{cache_suffix}.parquet"
+    errors_path = output_dir / f"history_errors_{as_of.isoformat()}{cache_suffix}.json"
 
     if args.from_cache:
         if not all(path.exists() for path in (spot_path, history_path, benchmark_path)):
@@ -138,8 +175,10 @@ def main() -> None:
     scored = score_reversal_features(features)
     scored["market_regime"] = regime.regime
     scored["universe_scope"] = f"sina_spot_prefilter_{prefilter_count}"
-    csv_path = output_dir / f"reversal_screen_{as_of.isoformat()}.csv"
-    report_path = output_dir / f"reversal_screen_{as_of.isoformat()}.md"
+    output_stem = "reversal_preview" if args.preview else "reversal_screen"
+    csv_path = output_dir / f"{output_stem}_{as_of.isoformat()}.csv"
+    report_path = output_dir / f"{output_stem}_{as_of.isoformat()}.md"
+    observed_values = spot.get("source_timestamp", pd.Series(dtype=str)).dropna().astype(str)
     scored.to_csv(csv_path, index=False, encoding="utf-8-sig")
     metadata = {
         "as_of": as_of.isoformat(), "snapshot_rows": len(spot), "prefilter_rows": prefilter_count,
@@ -150,13 +189,17 @@ def main() -> None:
         "focus_candidate_count": int(scored["focus_selected"].sum()),
         "feature_version": REVERSAL_FEATURE_VERSION, "score_version": REVERSAL_SCORE_VERSION,
         "sources": "Sina all-A snapshot/amount rank + Tencent qfq OHLCV + CSI300 Sina index",
+        "publication_mode": "INTRADAY_PREVIEW" if args.preview else "FINAL_DAILY_GOLD",
+        "snapshot_observed_at_min": observed_values.min() if not observed_values.empty else None,
+        "snapshot_observed_at_max": observed_values.max() if not observed_values.empty else None,
         "csv_path": str(csv_path), "report_path": str(report_path),
     }
     db_path = Path(args.db)
     if not db_path.is_absolute():
         db_path = root / db_path
     metadata["db_path"] = str(db_path)
-    publish_reversal_screen(db_path, scored, regime, metadata)
+    if not args.preview:
+        publish_reversal_screen(db_path, scored, regime, metadata)
     _render_report(scored, regime.to_dict(), metadata, report_path, args.top_n)
     print(json.dumps({"market_regime": regime.to_dict(), **metadata}, ensure_ascii=False, indent=2))
 
