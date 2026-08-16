@@ -8,6 +8,7 @@ from quant_agent.knowledge.adapters.base import (
 from quant_agent.knowledge.adapters.markdown import StaticMarkdownAdapter
 from quant_agent.knowledge.adapters.screening import ScreeningReportAdapter
 from quant_agent.knowledge.adapters.thesis import ThesisNoteAdapter
+from quant_agent.knowledge.adapters.theme_rotation import ThemeRotationKnowledgeAdapter
 from quant_agent.knowledge.adapters.weekly import WeeklyResearchAdapter
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "ScreeningReportAdapter",
     "StaticMarkdownAdapter",
     "ThesisNoteAdapter",
+    "ThemeRotationKnowledgeAdapter",
     "WeeklyResearchAdapter",
 ]

@@ -253,6 +253,12 @@ def build_parser() -> argparse.ArgumentParser:
     sync.add_argument("--db")
     status = index_subparsers.add_parser("status", help="Show hybrid index parity and outbox status")
     status.add_argument("--db")
+
+    theme_rotation = subparsers.add_parser(
+        "theme-rotation", help="Run the deterministic technology-theme rotation monitor"
+    )
+    from quant_agent.cli.run_theme_rotation import add_arguments as add_theme_rotation_arguments
+    add_theme_rotation_arguments(theme_rotation)
     return parser
 
 
@@ -266,6 +272,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _answer(args, paths)
     if args.command == "index":
         return _index(args, paths)
+    if args.command == "theme-rotation":
+        from quant_agent.cli.run_theme_rotation import execute as execute_theme_rotation
+        return execute_theme_rotation(args, paths)
     parser.error(f"unknown command: {args.command}")
     return 2
 

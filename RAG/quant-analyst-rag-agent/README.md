@@ -22,6 +22,7 @@
 - Phase 3 无未来数据的周频回测与 weekly document lifecycle；
 - selloff repair / reversal screen，用于急跌后的强势修复候选；
 - 宏观 point-in-time features、四类规则模型、时效性风险文档和 liquidity transmission 仪表盘。
+- 科技主题资金轮动监控：13 个 ETF/等权篮子、相对强弱/趋势/量能/宽度评分、10 类归因剧本、阈值告警与 RAG 发布。
 - 付费订阅/私人宏观材料的 local-first ingestion、观点卡、Kimi egress policy 与 hash-only audit。
 - Phase A canonical search：typed query contract、Markdown 幂等迁移、中文 SQLite FTS5、outbox worker 与统一 `quant-agent search`。
 - RAG Phase 4/5：canonical offline vector + temporal hybrid retrieval、labeled retrieval evaluation、context dedup/token budget、EvidencePacket 与可选 Kimi grounded synthesis。
@@ -114,6 +115,42 @@
 - `macro_pricing_inferences`。
 
 Kimi 只在 deterministic change event 出现时读取 compact 14D packet，并输出可证伪 pricing hypothesis；它不读取 HTML、不调用同花顺、不重算 numeric evidence。
+
+### 科技主题资金轮动监控
+
+参考授权提供的 Pine `v2.6.1r` 规则已经迁移为项目原生 Python vertical slice。原始 Pine 文件不进入
+仓库；运行时由确定性引擎计算 13 个科技主题的 5/20/60 日相对收益、绝对收益、趋势、成交额倍数、
+宽度、分数和状态，并生成 10 类跨主题归因。
+
+文件输入支持 CSV/Parquet，列契约为 `date,symbol,close,volume`：
+
+```bash
+quant-agent theme-rotation \
+  --prices /path/to/us_daily.parquet \
+  --as-of 2026-08-01
+```
+
+安装 research extra 后也可以使用现有 AkShare provider boundary 刷新：
+
+```bash
+quant-agent theme-rotation --live --as-of 2026-08-01
+```
+
+输出位于 `outputs/theme-rotation/`：
+
+- `theme_rotation_snapshot_YYYY-MM-DD.json`：完整机器可读 snapshot 与分数历史；
+- `theme_rotation_report_YYYY-MM-DD.md`：主题横截面、归因、告警和限制；
+- `theme_rotation_dashboard_YYYY-MM-DD.html`：深色热力表、可点击主题分数线和归因表。
+
+同一次运行会写入 `phase1_research.db`，并通过 `ThemeRotationKnowledgeAdapter` 发布为 canonical
+`THEME_RESEARCH`。随后执行 `quant-agent index sync`，即可从现有 search/answer 入口召回：
+
+```bash
+quant-agent index sync
+quant-agent search "软件和半导体是否正在强弱对调" --theme software
+```
+
+指标口径、持久化和失败边界见 [ADR 0014](docs/adr/0014-technology-theme-rotation-monitor.md)。
 
 对于付费订阅或私人渠道材料，原始文件不会进入通用 RAG store，也不会默认发送给 Kimi。系统只发布人工批准、non-verbatim 的 `MacroViewpoint`，再由 egress policy 决定是否允许 Kimi 读取抽象观点或明确授权的短摘录。完整设计、权限状态机和运行命令见 [Private Material Intelligence](docs/private-material-intelligence.md)。
 

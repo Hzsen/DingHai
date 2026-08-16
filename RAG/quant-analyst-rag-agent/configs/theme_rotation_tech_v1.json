@@ -1,0 +1,33 @@
+{
+  "config": {
+    "benchmark_symbol": "QQQ",
+    "calculation_timeframe": "1D",
+    "lookback_bars": 350,
+    "trend_length": 20,
+    "slow_length": 50,
+    "volume_length": 20,
+    "volume_confirmation": 1.3,
+    "crowded_relative_60d": 18.0,
+    "crowded_distance_50d": 8.0,
+    "early_rotation_threshold": 60.0,
+    "confirmed_entry_threshold": 75.0,
+    "weakening_threshold": 45.0,
+    "model_version": "tech-theme-rotation-v2.6.1r-python.1",
+    "reference_model_version": "pine-v2.6.1r"
+  },
+  "themes": [
+    {"theme_id":"semiconductor","label":"半导体","kind":"ETF","proxy_symbol":"SMH","members":["SMH"],"description":"美国上市半导体龙头 ETF 代理。"},
+    {"theme_id":"software","label":"软件","kind":"ETF","proxy_symbol":"IGV","members":["IGV"],"description":"北美软件行业 ETF 代理。"},
+    {"theme_id":"cloud","label":"云计算","kind":"ETF","proxy_symbol":"SKYY","members":["SKYY"],"description":"云计算主题 ETF 代理。"},
+    {"theme_id":"cybersecurity","label":"网络安全","kind":"ETF","proxy_symbol":"CIBR","members":["CIBR"],"description":"网络安全主题 ETF 代理。"},
+    {"theme_id":"robotics","label":"机器人","kind":"ETF","proxy_symbol":"BOTZ","members":["BOTZ"],"description":"全球机器人与自动化 ETF 代理。"},
+    {"theme_id":"ai_broad","label":"AI综合","kind":"ETF","proxy_symbol":"AIQ","members":["AIQ"],"description":"AI 与大数据主题 ETF 代理。"},
+    {"theme_id":"ai_apps","label":"AI应用软件","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["PLTR","APP","SNOW","DDOG","MDB"],"description":"AI 应用软件成员的日收益等权合成指数。"},
+    {"theme_id":"optical_components","label":"光通信零部件","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["COHR","LITE","AAOI"],"description":"光通信与光器件成员的日收益等权合成指数。"},
+    {"theme_id":"ai_network","label":"AI网络","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["ANET","CIEN","CSCO"],"description":"AI 网络设备成员的日收益等权合成指数。"},
+    {"theme_id":"memory_storage","label":"储存","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["MU","WDC","STX","SNDK"],"description":"存储芯片与设备成员的日收益等权合成指数。"},
+    {"theme_id":"data_center_infra","label":"数据中心电力散热","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["VRT","ETN","PWR","CEG","GEV"],"description":"数据中心电力、能源与散热成员的日收益等权合成指数。"},
+    {"theme_id":"hyperscalers","label":"云巨头/AI买方","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["MSFT","AMZN","GOOGL","META"],"description":"云厂商及 AI 资本开支买方的日收益等权合成指数。"},
+    {"theme_id":"ai_hardware","label":"AI硬件卖方","kind":"EQUAL_WEIGHT_BASKET","proxy_symbol":"BASKET","members":["NVDA","AVGO","AMD","MRVL"],"description":"AI 芯片与硬件卖方的日收益等权合成指数。"}
+  ]
+}

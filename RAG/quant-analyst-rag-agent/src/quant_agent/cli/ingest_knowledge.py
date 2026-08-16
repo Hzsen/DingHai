@@ -10,13 +10,14 @@ from quant_agent.knowledge.adapters import (
     KnowledgeMigrationService,
     ScreeningReportAdapter,
     StaticMarkdownAdapter,
+    ThemeRotationKnowledgeAdapter,
     ThesisNoteAdapter,
     WeeklyResearchAdapter,
 )
 from quant_agent.knowledge.store import KnowledgeStore
 
 
-SOURCES = ("static", "weekly", "thesis", "screening")
+SOURCES = ("static", "weekly", "thesis", "screening", "theme-rotation")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -57,6 +58,7 @@ def main() -> int:
             as_of=args.screening_as_of,
             project_root=project_root,
         ),
+        "theme-rotation": ThemeRotationKnowledgeAdapter(db_path),
     }
     service = KnowledgeMigrationService(KnowledgeStore(db_path))
     results = [service.migrate(adapters[source]) for source in selected]
