@@ -259,6 +259,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     from quant_agent.cli.run_theme_rotation import add_arguments as add_theme_rotation_arguments
     add_theme_rotation_arguments(theme_rotation)
+
+    daily_run = subparsers.add_parser(
+        "daily-run", help="Run the unified daily research command-center dashboard"
+    )
+    from quant_agent.cli.run_daily_run import add_arguments as add_daily_run_arguments
+    add_daily_run_arguments(daily_run)
     return parser
 
 
@@ -275,6 +281,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "theme-rotation":
         from quant_agent.cli.run_theme_rotation import execute as execute_theme_rotation
         return execute_theme_rotation(args, paths)
+    if args.command == "daily-run":
+        from quant_agent.cli.run_daily_run import execute as execute_daily_run
+        return execute_daily_run(args, paths)
     parser.error(f"unknown command: {args.command}")
     return 2
 

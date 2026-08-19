@@ -16,3 +16,7 @@ data/private/
 __pycache__/
 .pytest_cache/
 *.py[cod]
+
+# generated daily-run artifacts (DB + rendered reports)
+outputs/daily/
+*.db
