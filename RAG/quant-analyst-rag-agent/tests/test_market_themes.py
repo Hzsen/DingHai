@@ -96,8 +96,8 @@ def test_theme_layers_publish_to_rag_chunks_and_runnable_dashboard(tmp_path) -> 
     assert "MARKET_THEME_FAST_INVALIDATION" in chunk_types
     paths = publish_macro_outputs(tmp_path, snapshot, document, market_theme_states=states)
     dashboard = paths["html"].read_text(encoding="utf-8")
-    assert "Three-layer market view" in dashboard
-    assert "Market theme evidence explorer" in dashboard
-    assert "renderState(0)" in dashboard
+    assert "慢层 · 数周至数月" in dashboard
+    assert "短期交易与 14 日再定价" in dashboard
+    assert "openTheme" in dashboard
     payload = json.loads(paths["json"].read_text(encoding="utf-8"))
     assert payload["market_theme_states"][0]["dominant_theme_id"] == "TECH_CONCENTRATION"

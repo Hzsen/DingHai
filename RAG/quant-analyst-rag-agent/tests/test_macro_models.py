@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+import re
 import sqlite3
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -8,7 +11,8 @@ import pandas as pd
 from domain.macro import MacroDocumentStatus, RatePressureState, SeriesFeature, Stance, StanceHorizon
 from quant_agent.macro.document import build_macro_document, publish_macro_document
 from quant_agent.macro.features import compute_macro_features
-from quant_agent.macro.report import publish_macro_outputs
+from quant_agent.macro.history import history_point_from_snapshot
+from quant_agent.macro.report import publish_macro_outputs, render_macro_dashboard
 from quant_agent.macro.rules import evaluate_macro
 
 
@@ -161,9 +165,94 @@ def test_macro_outputs_include_dashboard_and_research_disclaimer(tmp_path) -> No
     paths = publish_macro_outputs(tmp_path, snapshot, document)
     assert all(path.exists() for path in paths.values())
     dashboard = paths["html"].read_text(encoding="utf-8")
-    assert "Where liquidity is being absorbed" in dashboard
-    assert "not audited ETF fund flows" in dashboard
+    assert 'lang="zh-CN"' in dashboard
+    assert "谁在吸收流动性" in dashboard
+    assert "不是 ETF 申赎" in dashboard
     assert "not investment advice" in paths["markdown"].read_text(encoding="utf-8")
+
+
+def _dashboard_payload(dashboard: str) -> dict:
+    match = re.search(r'<script id="dashboard-data" type="application/json">(.*?)</script>', dashboard)
+    assert match is not None
+    return json.loads(match.group(1))
+
+
+def test_dashboard_preserves_numeric_contract_and_does_not_fill_missing_history() -> None:
+    snapshot = evaluate_macro(_screenshot_like_features(), NOW)
+    current = history_point_from_snapshot(snapshot)
+    first = replace(
+        current,
+        as_of=NOW - timedelta(days=7),
+        snapshot_id="earlier",
+        target_absorption={
+            key: value for key, value in current.target_absorption.items() if key != "US_LARGE_CAP"
+        },
+    )
+    dashboard = render_macro_dashboard(snapshot, [first, current])
+    payload = _dashboard_payload(dashboard)
+    large_cap = next(item for item in payload["assets"] if item["symbol"] == "SPY")
+    assert 'class="inject"' in dashboard
+    assert 'class="drain"' in dashboard
+    assert large_cap["score"] == next(
+        item.absorption_score for item in snapshot.liquidity_target_flows if item.proxy_symbol == "SPY"
+    )
+    assert large_cap["change"] is None
+    assert large_cap["history"] == [{"date": NOW.date().isoformat(), "value": large_cap["score"]}]
+
+
+def test_dashboard_zero_source_flows_have_valid_geometry() -> None:
+    snapshot = evaluate_macro(_screenshot_like_features(), NOW)
+    zero_snapshot = replace(
+        snapshot,
+        liquidity_source_flows=tuple(
+            replace(flow, flow_billions_usd_20d=0.0) for flow in snapshot.liquidity_source_flows
+        ),
+    )
+    dashboard = render_macro_dashboard(zero_snapshot)
+    assert dashboard.count("width:0.00%") == len(zero_snapshot.liquidity_source_flows)
+    assert ">+0.0<" in dashboard
+    assert "nan" not in dashboard.lower()
+    assert "inf" not in dashboard.lower()
+
+
+def test_dashboard_comparison_requires_two_same_version_points() -> None:
+    snapshot = evaluate_macro(_screenshot_like_features(), NOW)
+    point = history_point_from_snapshot(snapshot)
+    single = render_macro_dashboard(snapshot, [point])
+    assert "暂无可比较数据" in single
+    incompatible = render_macro_dashboard(
+        snapshot,
+        [
+            replace(point, as_of=NOW - timedelta(days=7), snapshot_id="old", model_version="old-model"),
+            replace(point, model_version="other-model"),
+        ],
+    )
+    assert "历史点与当前模型版本不兼容" in incompatible
+
+
+def test_dashboard_distinguishes_quality_from_market_divergence() -> None:
+    snapshot = replace(
+        evaluate_macro(_screenshot_like_features(), NOW),
+        data_coverage=0.4,
+        quality_flags=("BROAD_DOLLAR_PROXY_NOT_ICE_DXY",),
+        stale_series=("WALCL",),
+        conflicting_signals=("CREDIT_SPREAD_CONTAINED",),
+    )
+    dashboard = render_macro_dashboard(snapshot)
+    assert "40% · 1 项质量标记" in dashboard
+    assert "数据质量：</strong>1 项标记，1 个过期序列" in dashboard
+    assert "市场分歧：</strong>1 项冲突信号" in dashboard
+
+
+def test_dashboard_escapes_external_text_in_html_and_script_payload() -> None:
+    snapshot = replace(
+        evaluate_macro(_screenshot_like_features(), NOW),
+        main_drivers=('</script><script>window.injected=true</script>',),
+    )
+    dashboard = render_macro_dashboard(snapshot)
+    assert "window.injected=true" in dashboard
+    assert "</script><script>window.injected=true" not in dashboard
+    assert "&lt;/script&gt;&lt;script&gt;window.injected=true&lt;/script&gt;" in dashboard
 
 
 def test_liquidity_snapshot_separates_sources_from_target_absorption() -> None:
